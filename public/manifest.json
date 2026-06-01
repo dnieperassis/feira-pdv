@@ -1,0 +1,24 @@
+{
+  "name": "Feira PDV",
+  "short_name": "FeiraPDV",
+  "description": "Controle de vendas, mesas e pedidos para barraca de feira",
+  "start_url": "/mesas",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#f59e0b",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
