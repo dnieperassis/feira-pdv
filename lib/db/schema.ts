@@ -82,6 +82,11 @@ export function migrate(db: Database.Database) {
       motivo      TEXT,
       criado_em   TEXT    DEFAULT (datetime('now','localtime'))
     );
+
+    CREATE TABLE IF NOT EXISTS configuracoes (
+      chave TEXT PRIMARY KEY,
+      valor TEXT
+    );
   `)
 
   seedInicial(db)
