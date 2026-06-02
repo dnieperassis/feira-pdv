@@ -55,16 +55,16 @@ button {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
 
-    /* Overlay claro creme sobre a foto dos pastéis — fundo fica difuso e elegante */
+    /* Overlay suave — foto dos pastéis aparece com destaque */
     background:
       linear-gradient(
         to bottom,
-        rgba(255, 248, 235, 0.82) 0%,
-        rgba(255, 243, 220, 0.78) 40%,
-        rgba(255, 240, 210, 0.80) 70%,
-        rgba(255, 235, 195, 0.85) 100%
+        rgba(255, 248, 235, 0.55) 0%,   /* header: semi-transparente */
+        rgba(255, 244, 220, 0.60) 35%,  /* meio: levemente mais opaco */
+        rgba(255, 240, 210, 0.62) 65%,  /* corpo: texto legível */
+        rgba(255, 235, 195, 0.58) 100%  /* rodapé: mais aberto */
       ),
-      url('/pasteis-bg.jpg') center center / cover no-repeat;
+      url('/pasteis-bg.jpg') center top / cover no-repeat;
   }
   #cardapio-pdf * { visibility: visible !important; }
 
@@ -88,15 +88,19 @@ button {
     font-weight: bold;
     letter-spacing: 4px;
     text-transform: uppercase;
-    color: #3b0a00;
-    text-shadow: 1px 1px 0 rgba(255,255,255,0.6);
+    color: #1c0500;
+    text-shadow:
+      1px 1px 0 rgba(255,255,255,0.9),
+      2px 2px 6px rgba(255,255,255,0.7);
     margin: 0 0 2mm;
   }
   .cp-subtitulo {
     font-size: 17pt;
     letter-spacing: 11px;
-    color: #c2410c;
+    color: #9a2c00;
     font-style: italic;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(255,255,255,0.8);
     margin-bottom: 4mm;
   }
 
@@ -117,8 +121,12 @@ button {
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: #9a3412;
+    color: #7c1d00;
+    text-shadow: 1px 1px 3px rgba(255,255,255,0.85);
     margin: 0 0 2mm;
+    background: rgba(255,255,255,0.35);
+    border-radius: 3px;
+    padding: 1mm 2mm;
   }
   .cp-cat-linha {
     height: 2px;
@@ -135,23 +143,26 @@ button {
     margin-bottom: 2mm;
   }
   .cp-item-nome {
-    color: #44403c;
+    color: #1c0500;
     font-size: 12.5pt;
     white-space: nowrap;
+    font-weight: 600;
+    text-shadow: 0 0 8px rgba(255,255,255,0.9);
   }
   .cp-item-dots {
     flex: 1;
-    border-bottom: 1px dotted rgba(194, 65, 12, 0.40);
+    border-bottom: 1.5px dotted rgba(124, 29, 0, 0.50);
     margin: 0 4px 3px;
     min-width: 8px;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
   .cp-item-preco {
-    color: #92400e;
+    color: #7c1d00;
     font-weight: bold;
     font-size: 12.5pt;
     white-space: nowrap;
+    text-shadow: 0 0 6px rgba(255,255,255,0.85);
   }
 
   /* ── RODAPÉ ── */
@@ -159,10 +170,10 @@ button {
     text-align: center;
     padding: 4mm 18mm 8mm;
   }
-  .cp-footer-linha { color: #c2410c; font-size: 9pt; opacity: 0.65; margin-bottom: 2mm; }
-  .cp-footer-txt   { font-size: 12pt; color: #3b0a00; font-style: italic; margin: 0 0 1.5mm; }
-  .cp-footer-local { font-size: 10pt; color: #9a3412; margin: 0 0 1mm; }
-  .cp-footer-data  { font-size: 8.5pt; color: rgba(59,10,0,0.45); margin: 0; }
+  .cp-footer-linha { color: #7c1d00; font-size: 9pt; opacity: 0.75; margin-bottom: 2mm; text-shadow: 0 0 4px rgba(255,255,255,0.8); }
+  .cp-footer-txt   { font-size: 12pt; color: #1c0500; font-style: italic; font-weight: 600; text-shadow: 0 0 8px rgba(255,255,255,0.9); margin: 0 0 1.5mm; }
+  .cp-footer-local { font-size: 10pt; color: #7c1d00; font-weight: bold; text-shadow: 0 0 6px rgba(255,255,255,0.85); margin: 0 0 1mm; }
+  .cp-footer-data  { font-size: 8.5pt; color: rgba(28,5,0,0.55); margin: 0; }
 
   /* ── KOT (já existente) ─────────────────────────────── */
   .no-print { display: none !important; }
