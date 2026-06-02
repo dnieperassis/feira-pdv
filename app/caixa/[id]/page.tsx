@@ -290,33 +290,7 @@ export default function CaixaPage() {
         </Button>
       </div>
 
-      {/* Estilos de impressão do cupom */}
-      <style jsx global>{`
-        .cupom-print { display: none; }
-
-        @media print {
-          .no-print    { display: none !important; }
-          .cupom-print {
-            display: block !important;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            width: 80mm;
-            margin: 0 auto;
-            padding: 6px;
-            color: #000;
-            background: #fff;
-          }
-          .cupom-center  { text-align: center; line-height: 1.8; }
-          .cupom-divider { border-top: 1px dashed #000; margin: 6px 0; }
-          .cupom-table   { width: 100%; border-collapse: collapse; }
-          .cupom-table td { padding: 2px 0; vertical-align: top; }
-          .cupom-right   { text-align: right; white-space: nowrap; }
-          .cupom-total   {
-            display: flex; justify-content: space-between;
-            font-size: 16px; font-weight: bold; padding: 4px 0;
-          }
-        }
-      `}</style>
+      {/* Estilos de impressão centralizados em globals.css */}
     </>
   )
 }

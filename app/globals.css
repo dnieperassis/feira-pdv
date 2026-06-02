@@ -24,3 +24,165 @@ button {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+
+/* ── ESTILOS DE IMPRESSÃO GLOBAIS ───────────────────────────────────── */
+
+/* KOT e Cupom (tela de pedidos e caixa) */
+.kot-print  { display: none; }
+.cupom-print { display: none; }
+
+/* Cardápio PDF */
+#cardapio-pdf { display: none; }
+
+@media print {
+  @page { size: A4 portrait; margin: 0; }
+
+  /* Esconde TUDO via visibility — diferente de display:none,
+     permite que filhos individuais sobrescrevam com visibility:visible */
+  body * { visibility: hidden !important; }
+
+  /* ── Cardápio ─────────────────────────────────────────── */
+  #cardapio-pdf {
+    display: block !important;
+    visibility: visible !important;
+    position: fixed;
+    inset: 0;
+    width: 210mm;
+    min-height: 297mm;
+    z-index: 9999;
+    font-family: Georgia, 'Times New Roman', serif;
+    color: #fdf6ec;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background:
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23f59e0b' fill-opacity='0.07'%3E%3Cpolygon points='30,4 56,18 56,42 30,56 4,42 4,18'/%3E%3C/g%3E%3C/svg%3E"),
+      linear-gradient(160deg,#3b0d00 0%,#6b2100 20%,#8b2f00 40%,#7c2d00 60%,#4a1500 80%,#2d0a00 100%);
+  }
+  #cardapio-pdf * { visibility: visible !important; }
+
+  .cp-header {
+    text-align: center;
+    padding: 12mm 18mm 8mm;
+  }
+  .cp-decoracao-topo,.cp-decoracao-baixo {
+    color: #f59e0b;
+    font-size: 9pt;
+    letter-spacing: 2px;
+    opacity: 0.7;
+  }
+  .cp-icone {
+    font-size: 28pt;
+    margin: 3mm 0 2mm;
+  }
+  .cp-titulo {
+    font-size: 24pt;
+    font-weight: bold;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #fef3c7;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+    margin: 0 0 2mm;
+  }
+  .cp-subtitulo {
+    font-size: 14pt;
+    letter-spacing: 10px;
+    color: #f59e0b;
+    font-style: italic;
+    margin-bottom: 4mm;
+  }
+  .cp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5mm 10mm;
+    padding: 0 15mm 8mm;
+  }
+  .cp-secao { break-inside: avoid; }
+  .cp-cat-titulo {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #fcd34d;
+    margin: 0 0 2mm;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+  }
+  .cp-cat-linha {
+    height: 1px;
+    background: linear-gradient(90deg, #f59e0b, transparent);
+    margin-bottom: 2.5mm;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .cp-lista { list-style: none; margin: 0; padding: 0; }
+  .cp-item {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    margin-bottom: 1.5mm;
+  }
+  .cp-item-nome { color: #fdf6ec; font-size: 10pt; white-space: nowrap; }
+  .cp-item-dots {
+    flex: 1;
+    border-bottom: 1px dotted rgba(245,158,11,0.45);
+    margin: 0 3px 2px;
+    min-width: 8px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .cp-item-preco { color: #fcd34d; font-weight: bold; font-size: 10pt; white-space: nowrap; }
+  .cp-footer {
+    text-align: center;
+    padding: 4mm 18mm 8mm;
+  }
+  .cp-footer-linha { color: #f59e0b; font-size: 8pt; opacity: 0.7; margin-bottom: 2mm; }
+  .cp-footer-txt { font-size: 10pt; color: #fef3c7; font-style: italic; margin: 0 0 1.5mm; }
+  .cp-footer-local { font-size: 8.5pt; color: #fcd34d; margin: 0 0 1mm; }
+  .cp-footer-data { font-size: 7.5pt; color: rgba(253,246,236,0.5); margin: 0; }
+
+  /* ── KOT (já existente) ─────────────────────────────── */
+  .no-print { display: none !important; }
+  .kot-print {
+    display: block !important;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    width: 80mm;
+    margin: 0 auto;
+    padding: 8px;
+    color: #000;
+    background: #fff;
+  }
+  .kot-header { text-align: center; margin-bottom: 8px; line-height: 1.6; }
+  .kot-header strong { font-size: 18px; }
+  .kot-item { display: flex; gap: 8px; margin: 6px 0; font-size: 15px; flex-wrap: wrap; }
+  .kot-qty  { font-weight: bold; min-width: 28px; }
+  .kot-nome { font-weight: bold; flex: 1; }
+  .kot-obs  { margin: 0 0 4px 36px; font-size: 13px; color: #444; width: 100%; }
+  .kot-total { text-align: center; margin-top: 8px; font-size: 13px; }
+
+  /* ── Cupom (já existente) ───────────────────────────── */
+  .cupom-print {
+    display: block !important;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    width: 80mm;
+    margin: 0 auto;
+    padding: 6px;
+    color: #000;
+    background: #fff;
+  }
+  .cupom-center  { text-align: center; line-height: 1.8; }
+  .cupom-divider { border-top: 1px dashed #000; margin: 6px 0; }
+  .cupom-table   { width: 100%; border-collapse: collapse; }
+  .cupom-table td { padding: 2px 0; vertical-align: top; }
+  .cupom-right   { text-align: right; white-space: nowrap; }
+  .cupom-total   {
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 4px 0;
+  }
+}

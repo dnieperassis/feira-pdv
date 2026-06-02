@@ -350,32 +350,7 @@ export default function PedidosPage() {
         )}
       </Modal>
 
-      {/* ── Estilos de impressão do KOT ── */}
-      <style jsx global>{`
-        .kot-print { display: none; }
-
-        @media print {
-          .no-print { display: none !important; }
-          .kot-print {
-            display: block !important;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            width: 80mm;
-            margin: 0 auto;
-            padding: 8px;
-            color: #000;
-            background: #fff;
-          }
-          .kot-header { text-align: center; margin-bottom: 8px; line-height: 1.6; }
-          .kot-header strong { font-size: 18px; }
-          .kot-item { display: flex; gap: 8px; margin: 6px 0; font-size: 15px; flex-wrap: wrap; }
-          .kot-qty  { font-weight: bold; min-width: 28px; }
-          .kot-nome { font-weight: bold; flex: 1; }
-          .kot-obs  { margin: 0 0 4px 36px; font-size: 13px; color: #444; width: 100%; }
-          .kot-total { text-align: center; margin-top: 8px; font-size: 13px; }
-          hr { border: none; border-top: 1px dashed #000; margin: 8px 0; }
-        }
-      `}</style>
+      {/* Estilos de impressão centralizados em globals.css */}
     </>
   )
 }
