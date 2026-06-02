@@ -51,67 +51,78 @@ button {
     min-height: 297mm;
     z-index: 9999;
     font-family: Georgia, 'Times New Roman', serif;
-    color: #fdf6ec;
+    color: #3b0a00;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+
+    /* Overlay claro creme sobre a foto dos pastéis — fundo fica difuso e elegante */
     background:
-      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23f59e0b' fill-opacity='0.07'%3E%3Cpolygon points='30,4 56,18 56,42 30,56 4,42 4,18'/%3E%3C/g%3E%3C/svg%3E"),
-      linear-gradient(160deg,#3b0d00 0%,#6b2100 20%,#8b2f00 40%,#7c2d00 60%,#4a1500 80%,#2d0a00 100%);
+      linear-gradient(
+        to bottom,
+        rgba(255, 248, 235, 0.82) 0%,
+        rgba(255, 243, 220, 0.78) 40%,
+        rgba(255, 240, 210, 0.80) 70%,
+        rgba(255, 235, 195, 0.85) 100%
+      ),
+      url('/pasteis-bg.jpg') center center / cover no-repeat;
   }
   #cardapio-pdf * { visibility: visible !important; }
 
+  /* ── CABEÇALHO ── */
   .cp-header {
     text-align: center;
-    padding: 12mm 18mm 8mm;
+    padding: 10mm 18mm 7mm;
   }
-  .cp-decoracao-topo,.cp-decoracao-baixo {
-    color: #f59e0b;
-    font-size: 9pt;
+  .cp-decoracao-topo, .cp-decoracao-baixo {
+    color: #c2410c;
+    font-size: 10pt;
     letter-spacing: 2px;
-    opacity: 0.7;
+    opacity: 0.75;
   }
   .cp-icone {
-    font-size: 28pt;
+    font-size: 32pt;
     margin: 3mm 0 2mm;
   }
   .cp-titulo {
-    font-size: 24pt;
+    font-size: 32pt;
     font-weight: bold;
-    letter-spacing: 3px;
+    letter-spacing: 4px;
     text-transform: uppercase;
-    color: #fef3c7;
-    text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+    color: #3b0a00;
+    text-shadow: 1px 1px 0 rgba(255,255,255,0.6);
     margin: 0 0 2mm;
   }
   .cp-subtitulo {
-    font-size: 14pt;
-    letter-spacing: 10px;
-    color: #f59e0b;
+    font-size: 17pt;
+    letter-spacing: 11px;
+    color: #c2410c;
     font-style: italic;
     margin-bottom: 4mm;
   }
+
+  /* ── GRADE DE CATEGORIAS ── */
   .cp-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 5mm 10mm;
-    padding: 0 15mm 8mm;
+    gap: 5mm 12mm;
+    padding: 0 14mm 8mm;
   }
   .cp-secao { break-inside: avoid; }
+
   .cp-cat-titulo {
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 12pt;
+    gap: 5px;
+    font-size: 15pt;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: #fcd34d;
+    color: #9a3412;
     margin: 0 0 2mm;
-    text-shadow: 1px 1px 4px rgba(0,0,0,0.5);
   }
   .cp-cat-linha {
-    height: 1px;
-    background: linear-gradient(90deg, #f59e0b, transparent);
+    height: 2px;
+    background: linear-gradient(90deg, #c2410c, transparent);
     margin-bottom: 2.5mm;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
@@ -121,26 +132,37 @@ button {
     display: flex;
     align-items: baseline;
     gap: 2px;
-    margin-bottom: 1.5mm;
+    margin-bottom: 2mm;
   }
-  .cp-item-nome { color: #fdf6ec; font-size: 10pt; white-space: nowrap; }
+  .cp-item-nome {
+    color: #44403c;
+    font-size: 12.5pt;
+    white-space: nowrap;
+  }
   .cp-item-dots {
     flex: 1;
-    border-bottom: 1px dotted rgba(245,158,11,0.45);
-    margin: 0 3px 2px;
+    border-bottom: 1px dotted rgba(194, 65, 12, 0.40);
+    margin: 0 4px 3px;
     min-width: 8px;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .cp-item-preco { color: #fcd34d; font-weight: bold; font-size: 10pt; white-space: nowrap; }
+  .cp-item-preco {
+    color: #92400e;
+    font-weight: bold;
+    font-size: 12.5pt;
+    white-space: nowrap;
+  }
+
+  /* ── RODAPÉ ── */
   .cp-footer {
     text-align: center;
     padding: 4mm 18mm 8mm;
   }
-  .cp-footer-linha { color: #f59e0b; font-size: 8pt; opacity: 0.7; margin-bottom: 2mm; }
-  .cp-footer-txt { font-size: 10pt; color: #fef3c7; font-style: italic; margin: 0 0 1.5mm; }
-  .cp-footer-local { font-size: 8.5pt; color: #fcd34d; margin: 0 0 1mm; }
-  .cp-footer-data { font-size: 7.5pt; color: rgba(253,246,236,0.5); margin: 0; }
+  .cp-footer-linha { color: #c2410c; font-size: 9pt; opacity: 0.65; margin-bottom: 2mm; }
+  .cp-footer-txt   { font-size: 12pt; color: #3b0a00; font-style: italic; margin: 0 0 1.5mm; }
+  .cp-footer-local { font-size: 10pt; color: #9a3412; margin: 0 0 1mm; }
+  .cp-footer-data  { font-size: 8.5pt; color: rgba(59,10,0,0.45); margin: 0; }
 
   /* ── KOT (já existente) ─────────────────────────────── */
   .no-print { display: none !important; }
