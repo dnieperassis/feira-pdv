@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Mesa } from '@/types'
+import { brl } from '@/lib/format'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 
@@ -116,7 +117,7 @@ export default function MesasPage() {
             </Badge>
             {mesa.total_comanda ? (
               <span className="text-sm text-slate-300 font-medium">
-                R$ {mesa.total_comanda.toFixed(2)}
+                R$ {brl(mesa.total_comanda)}
               </span>
             ) : null}
           </button>

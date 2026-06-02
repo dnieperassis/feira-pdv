@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { brl } from '@/lib/format'
 
 interface Resumo {
   totais: {
@@ -31,9 +32,9 @@ export default function RelatoriosPage() {
 
       {/* Cards de resumo */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <Card label="Total de Vendas" value={`R$ ${totais.total_vendas.toFixed(2)}`} color="amber" />
+        <Card label="Total de Vendas" value={`R$ ${brl(totais.total_vendas)}`} color="amber" />
         <Card label="Comandas Fechadas" value={String(totais.total_comandas)} color="blue" />
-        <Card label="Ticket Médio" value={`R$ ${ticket.toFixed(2)}`} color="slate" />
+        <Card label="Ticket Médio" value={`R$ ${brl(ticket)}`} color="slate" />
       </div>
 
       {/* Por forma de pagamento */}
@@ -54,7 +55,7 @@ export default function RelatoriosPage() {
                 <span className="text-white text-sm font-medium capitalize">{m.tipo}</span>
                 {m.observacao && <span className="text-slate-400 text-xs ml-2">{m.observacao}</span>}
               </div>
-              <span className="text-amber-400 font-semibold">R$ {m.valor.toFixed(2)}</span>
+              <span className="text-amber-400 font-semibold">R$ {brl(m.valor)}</span>
             </div>
           ))}
         </div>
@@ -81,7 +82,7 @@ function Row({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex justify-between items-center">
       <span className="text-slate-300 text-sm">{label}</span>
-      <span className="text-white font-semibold">R$ {value.toFixed(2)}</span>
+      <span className="text-white font-semibold">R$ {brl(value)}</span>
     </div>
   )
 }

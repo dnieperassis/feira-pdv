@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import QRCode from 'qrcode'
 import type { Comanda, ComandaItem, FormaPagamento } from '@/types'
 import { gerarPixPayload } from '@/lib/pix'
+import { brl, parseBRL } from '@/lib/format'
 import { Button } from '@/components/ui/Button'
 
 type Config = { nome_estabelecimento: string; cidade: string; chave_pix: string }
@@ -43,7 +44,7 @@ export default function CaixaPage() {
     setComanda(c)
     setItens(i)
     setConfig(cfg)
-    setValorRecebido(c.total.toFixed(2))
+    setValorRecebido(brl(c.total))
   }, [id, router])
 
   useEffect(() => { carregar() }, [carregar])
@@ -74,7 +75,7 @@ export default function CaixaPage() {
   }, [forma, config, comanda, itens])
 
   const total    = itens.reduce((s, i) => s + i.total, 0)
-  const recebido = parseFloat(valorRecebido) || 0
+  const recebido = parseBRL(valorRecebido)
   const troco    = forma === 'dinheiro' ? Math.max(0, recebido - total) : 0
 
   const agora = new Date()
@@ -135,7 +136,7 @@ export default function CaixaPage() {
             {itens.map(item => (
               <tr key={item.id}>
                 <td>{item.quantidade}x {item.produto_nome}</td>
-                <td className="cupom-right">R$ {item.total.toFixed(2)}</td>
+                <td className="cupom-right">R$ {brl(item.total)}</td>
               </tr>
             ))}
           </tbody>
@@ -143,7 +144,7 @@ export default function CaixaPage() {
         <div className="cupom-divider" />
         <div className="cupom-total">
           <span>TOTAL</span>
-          <span>R$ {total.toFixed(2)}</span>
+          <span>R$ {brl(total)}</span>
         </div>
         <div className="cupom-divider" />
         <div className="cupom-center" style={{ fontSize: 12 }}>
@@ -151,7 +152,7 @@ export default function CaixaPage() {
         </div>
         {forma === 'dinheiro' && troco > 0 && (
           <div className="cupom-center" style={{ fontSize: 12 }}>
-            Troco: R$ {troco.toFixed(2)}
+            Troco: R$ {brl(troco)}
           </div>
         )}
         <div className="cupom-divider" />
@@ -185,13 +186,13 @@ export default function CaixaPage() {
                   <span className="text-white font-medium">{item.produto_nome}</span>
                   <span className="text-slate-400 text-sm ml-2">× {item.quantidade}</span>
                 </div>
-                <span className="text-amber-400 font-semibold">R$ {item.total.toFixed(2)}</span>
+                <span className="text-amber-400 font-semibold">R$ {brl(item.total)}</span>
               </div>
             ))}
           </div>
           <div className="px-4 py-4 bg-slate-800 flex justify-between items-center border-t border-slate-600">
             <span className="text-white font-bold text-lg">Total</span>
-            <span className="text-amber-400 font-bold text-3xl">R$ {total.toFixed(2)}</span>
+            <span className="text-amber-400 font-bold text-3xl">R$ {brl(total)}</span>
           </div>
         </div>
 
@@ -223,18 +224,18 @@ export default function CaixaPage() {
             <div>
               <label className="text-slate-300 text-sm font-medium block mb-2">Valor Recebido (R$)</label>
               <input
-                type="number"
-                step="0.01"
-                min={total}
+                type="text"
+                inputMode="decimal"
                 value={valorRecebido}
                 onChange={e => setValorRecebido(e.target.value)}
+                onFocus={e => e.target.select()}
                 className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white text-2xl font-bold focus:outline-none focus:border-amber-500"
               />
             </div>
             {troco > 0 && (
               <div className="flex justify-between items-center bg-green-950/50 border border-green-700 rounded-xl px-4 py-3">
                 <span className="text-green-300 font-semibold text-lg">Troco</span>
-                <span className="text-green-400 font-bold text-2xl">R$ {troco.toFixed(2)}</span>
+                <span className="text-green-400 font-bold text-2xl">R$ {brl(troco)}</span>
               </div>
             )}
           </div>
@@ -263,7 +264,7 @@ export default function CaixaPage() {
                   style={{ width: 260, height: 260 }}
                 />
                 <div className="text-center">
-                  <p className="text-amber-400 font-bold text-2xl mb-1">R$ {total.toFixed(2)}</p>
+                  <p className="text-amber-400 font-bold text-2xl mb-1">R$ {brl(total)}</p>
                   <p className="text-slate-400 text-xs">{config.nome_estabelecimento}</p>
                 </div>
                 <button
@@ -285,7 +286,7 @@ export default function CaixaPage() {
           onClick={fechar}
           disabled={fechando || (forma === 'pix' && !config.chave_pix)}
         >
-          {fechando ? 'Processando...' : `✓ Confirmar Pagamento · R$ ${total.toFixed(2)}`}
+          {fechando ? 'Processando...' : `✓ Confirmar Pagamento · R$ ${brl(total)}`}
         </Button>
       </div>
 

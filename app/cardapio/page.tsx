@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import type { Produto, Categoria } from '@/types'
+import { brl } from '@/lib/format'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
@@ -154,7 +155,7 @@ export default function CardapioPage() {
                 {produto.disponivel ? 'Disponível' : 'Indisponível'}
               </Badge>
             </div>
-            <p className="text-amber-400 font-bold text-xl">R$ {produto.preco.toFixed(2)}</p>
+            <p className="text-amber-400 font-bold text-xl">R$ {brl(produto.preco)}</p>
             <div className="flex gap-2 pt-1 border-t border-slate-700">
               <Button variant="ghost" size="sm" onClick={() => toggleDisponivel(produto)} className="flex-1">
                 {produto.disponivel ? 'Pausar' : 'Ativar'}

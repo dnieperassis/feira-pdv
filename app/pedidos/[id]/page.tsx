@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import type { Comanda, ComandaItem, Produto, Categoria, Mesa } from '@/types'
+import { brl } from '@/lib/format'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 
@@ -190,7 +191,7 @@ export default function PedidosPage() {
               )}
             </div>
             <div className="flex items-center gap-2 flex-wrap justify-end">
-              <span className="text-amber-400 font-bold text-xl">R$ {total.toFixed(2)}</span>
+              <span className="text-amber-400 font-bold text-xl">R$ {brl(total)}</span>
               <Button
                 variant="secondary"
                 size="md"
@@ -243,7 +244,7 @@ export default function PedidosPage() {
                   className="flex flex-col items-start p-4 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-600 hover:border-amber-500 rounded-2xl transition-all duration-100 active:scale-95 text-left"
                 >
                   <span className="text-white font-semibold text-base leading-snug">{produto.nome}</span>
-                  <span className="text-amber-400 font-bold text-lg mt-2">R$ {produto.preco.toFixed(2)}</span>
+                  <span className="text-amber-400 font-bold text-lg mt-2">R$ {brl(produto.preco)}</span>
                 </button>
               ))}
             </div>
@@ -279,7 +280,7 @@ export default function PedidosPage() {
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <span className="text-amber-400 text-sm font-semibold">
-                      R$ {item.total.toFixed(2)}
+                      R$ {brl(item.total)}
                     </span>
                     {item.status !== 'cancelado' && item.status !== 'entregue' && (
                       <button
@@ -302,7 +303,7 @@ export default function PedidosPage() {
             <div className="px-4 py-3 border-t border-slate-700 bg-slate-800">
               <div className="flex justify-between items-center">
                 <span className="text-slate-300 font-semibold">Total</span>
-                <span className="text-amber-400 font-bold text-lg">R$ {total.toFixed(2)}</span>
+                <span className="text-amber-400 font-bold text-lg">R$ {brl(total)}</span>
               </div>
             </div>
           </div>
