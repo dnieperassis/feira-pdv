@@ -6,6 +6,7 @@ import { brl } from '@/lib/format'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
+import { CardapioImpressao } from '@/components/CardapioImpressao'
 
 type Form = {
   nome: string; preco: string; categoria_id: string
@@ -15,20 +16,31 @@ type Form = {
 const formVazio: Form = { nome: '', preco: '', categoria_id: '', descricao: '', disponivel: true }
 
 export default function CardapioPage() {
-  const [produtos, setProdutos] = useState<Produto[]>([])
-  const [categorias, setCategorias] = useState<Categoria[]>([])
-  const [catFiltro, setCatFiltro] = useState<number | 'todos'>('todos')
+  const [produtos, setProdutos]       = useState<Produto[]>([])
+  const [categorias, setCategorias]   = useState<Categoria[]>([])
+  const [catFiltro, setCatFiltro]     = useState<number | 'todos'>('todos')
   const [modalAberto, setModalAberto] = useState(false)
-  const [editando, setEditando] = useState<Produto | null>(null)
-  const [form, setForm] = useState<Form>(formVazio)
-  const [salvando, setSalvando] = useState(false)
-  const [erro, setErro] = useState('')
+  const [editando, setEditando]       = useState<Produto | null>(null)
+  const [form, setForm]               = useState<Form>(formVazio)
+  const [salvando, setSalvando]       = useState(false)
+  const [erro, setErro]               = useState('')
+  const [config, setConfig]           = useState({ nome_estabelecimento: '', cidade: '' })
 
   const carregar = useCallback(async () => {
-    const [rp, rc] = await Promise.all([fetch('/api/produtos'), fetch('/api/categorias')])
+    const [rp, rc, rcfg] = await Promise.all([
+      fetch('/api/produtos'),
+      fetch('/api/categorias'),
+      fetch('/api/configuracoes'),
+    ])
     setProdutos(await rp.json())
     setCategorias(await rc.json())
+    const cfg = await rcfg.json()
+    setConfig({ nome_estabelecimento: cfg.nome_estabelecimento, cidade: cfg.cidade })
   }, [])
+
+  function imprimirCardapio() {
+    window.print()
+  }
 
   useEffect(() => { carregar() }, [carregar])
 
@@ -111,7 +123,12 @@ export default function CardapioPage() {
       {/* Topo */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-white font-bold text-xl">Cardápio</h1>
-        <Button onClick={abrirNovo} size="md">+ Novo Produto</Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="md" onClick={imprimirCardapio}>
+            🖨️ Cardápio PDF
+          </Button>
+          <Button onClick={abrirNovo} size="md">+ Novo Produto</Button>
+        </div>
       </div>
 
       {/* Filtro por categoria */}
@@ -241,6 +258,14 @@ export default function CardapioPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Cardápio para impressão — oculto na tela, visível ao imprimir */}
+      <CardapioImpressao
+        produtos={produtos}
+        categorias={categorias}
+        nome={config.nome_estabelecimento}
+        cidade={config.cidade}
+      />
     </div>
   )
 }
