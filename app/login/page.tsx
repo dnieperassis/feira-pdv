@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { setSessao } from '@/lib/auth'
+import { setSessao, type Perfil } from '@/lib/auth'
 
 interface Operador { id: number; nome: string; codigo: string }
 
@@ -59,7 +59,7 @@ export default function LoginPage() {
 
     if (res.ok) {
       const op = await res.json()
-      setSessao({ operadorId: op.id, nome: op.nome, codigo: op.codigo })
+      setSessao({ operadorId: op.id, nome: op.nome, codigo: op.codigo, perfil: op.perfil as Perfil })
       router.replace('/mesas')
     } else {
       setErro('PIN incorreto')

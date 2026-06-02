@@ -12,8 +12,9 @@ export async function POST(req: NextRequest) {
 
   const db = getDb()
   const op = db.prepare(
-    "SELECT * FROM operadores WHERE codigo = ? COLLATE NOCASE AND ativo = 1"
-  ).get(codigo) as { id: number; nome: string; codigo: string; senha_hash: string } | undefined
+    "SELECT * FROM operadores WHERE codigo = ? AND ativo = 1"
+  ).get(String(codigo)) as
+    { id: number; nome: string; codigo: string; senha_hash: string; perfil: string } | undefined
 
   if (!op)
     return NextResponse.json({ error: 'Operador não encontrado ou inativo' }, { status: 401 })
@@ -22,5 +23,10 @@ export async function POST(req: NextRequest) {
   if (!ok)
     return NextResponse.json({ error: 'PIN incorreto' }, { status: 401 })
 
-  return NextResponse.json({ id: op.id, nome: op.nome, codigo: op.codigo })
+  return NextResponse.json({
+    id:     op.id,
+    nome:   op.nome,
+    codigo: op.codigo,
+    perfil: op.perfil,
+  })
 }

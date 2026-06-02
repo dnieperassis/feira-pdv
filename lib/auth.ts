@@ -1,9 +1,10 @@
-// Sessão do operador — armazenada no localStorage do browser
+export type Perfil = 'admin' | 'operador'
 
 export interface Sessao {
   operadorId: number
   nome: string
   codigo: string
+  perfil: Perfil
 }
 
 const KEY = 'fpv_sessao'
@@ -24,4 +25,8 @@ export function setSessao(s: Sessao) {
 
 export function clearSessao() {
   localStorage.removeItem(KEY)
+}
+
+export function isAdmin(): boolean {
+  return getSessao()?.perfil === 'admin'
 }

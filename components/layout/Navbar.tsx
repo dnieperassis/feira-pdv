@@ -4,23 +4,26 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { getSessao, clearSessao } from '@/lib/auth'
 import { useEffect, useState } from 'react'
+import type { Sessao } from '@/lib/auth'
 
-const links = [
-  { href: '/mesas',         label: 'Mesas',         icon: '🪑' },
-  { href: '/cardapio',      label: 'Cardápio',       icon: '📋' },
-  { href: '/estoque',       label: 'Estoque',        icon: '📦' },
-  { href: '/relatorios',    label: 'Relatórios',     icon: '📊' },
-  { href: '/configuracoes', label: 'Configurações',  icon: '⚙️' },
+const LINKS_COMUNS = [
+  { href: '/mesas',     label: 'Mesas',     icon: '🪑' },
+  { href: '/cardapio',  label: 'Cardápio',  icon: '📋' },
+  { href: '/estoque',   label: 'Estoque',   icon: '📦' },
+]
+
+const LINKS_ADMIN = [
+  { href: '/relatorios',    label: 'Relatórios',    icon: '📊' },
+  { href: '/configuracoes', label: 'Configurações', icon: '⚙️' },
 ]
 
 export function Navbar() {
   const pathname = usePathname()
   const router   = useRouter()
-  const [operador, setOperador] = useState<string | null>(null)
+  const [sessao, setSessao] = useState<Sessao | null>(null)
 
   useEffect(() => {
-    const s = getSessao()
-    setOperador(s ? s.nome : null)
+    setSessao(getSessao())
   }, [pathname])
 
   function logout() {
@@ -28,8 +31,11 @@ export function Navbar() {
     router.replace('/login')
   }
 
-  // Não renderiza a navbar na tela de login
   if (pathname === '/login') return null
+
+  const links = sessao?.perfil === 'admin'
+    ? [...LINKS_COMUNS, ...LINKS_ADMIN]
+    : LINKS_COMUNS
 
   return (
     <nav className="bg-slate-900 border-b border-slate-700 px-4 flex items-center justify-between h-14 shrink-0 z-40">
@@ -56,13 +62,23 @@ export function Navbar() {
         })}
       </div>
 
-      {operador && (
+      {sessao && (
         <div className="flex items-center gap-2 shrink-0 ml-2">
           <div className="flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-1.5">
-            <div className="w-6 h-6 rounded-full bg-amber-500/30 border border-amber-500 flex items-center justify-center text-amber-400 text-xs font-bold">
-              {operador.charAt(0).toUpperCase()}
+            <div className={[
+              'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border',
+              sessao.perfil === 'admin'
+                ? 'bg-amber-500/30 border-amber-500 text-amber-400'
+                : 'bg-slate-600/30 border-slate-500 text-slate-300',
+            ].join(' ')}>
+              {sessao.nome.charAt(0).toUpperCase()}
             </div>
-            <span className="text-slate-300 text-sm font-medium hidden sm:inline">{operador}</span>
+            <div className="hidden sm:flex flex-col leading-none">
+              <span className="text-slate-300 text-sm font-medium">{sessao.nome}</span>
+              <span className={`text-xs font-semibold ${sessao.perfil === 'admin' ? 'text-amber-500' : 'text-slate-500'}`}>
+                #{sessao.codigo} {sessao.perfil === 'admin' ? '· ADM' : ''}
+              </span>
+            </div>
           </div>
           <button
             onClick={logout}

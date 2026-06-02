@@ -11,7 +11,7 @@ interface Config {
   numero_mesas:         string
 }
 
-interface Operador { id: number; nome: string; codigo: string; ativo: number }
+interface Operador { id: number; nome: string; codigo: string; perfil: string; ativo: number }
 type FormOp = { nome: string; codigo: string; pin: string; pin2: string }
 
 const formOpVazio: FormOp = { nome: '', codigo: '', pin: '', pin2: '' }
@@ -220,14 +220,23 @@ export default function ConfiguracoesPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {op.perfil === 'admin' && (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                      ADM
+                    </span>
+                  )}
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${op.ativo ? 'bg-green-500/20 text-green-400' : 'bg-slate-600 text-slate-400'}`}>
                     {op.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                   <Button variant="ghost" size="sm" onClick={() => abrirEditarOp(op)}>Editar</Button>
-                  <Button variant="ghost" size="sm" onClick={() => toggleAtivoOp(op)}>
-                    {op.ativo ? 'Desativar' : 'Ativar'}
-                  </Button>
-                  <Button variant="danger" size="sm" onClick={() => excluirOp(op)}>✕</Button>
+                  {op.codigo !== '0000' && (
+                    <>
+                      <Button variant="ghost" size="sm" onClick={() => toggleAtivoOp(op)}>
+                        {op.ativo ? 'Desativar' : 'Ativar'}
+                      </Button>
+                      <Button variant="danger" size="sm" onClick={() => excluirOp(op)}>✕</Button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -239,7 +248,22 @@ export default function ConfiguracoesPage() {
       <Modal open={modalOp} onClose={() => setModalOp(false)} title={editandoOp ? `Editar: ${editandoOp.nome}` : 'Novo Operador'}>
         <div className="flex flex-col gap-4">
           <Field label="Nome completo *" value={formOp.nome} onChange={v => setFormOp(f => ({ ...f, nome: v }))} placeholder="Ex: João da Silva" />
-          <Field label="Código do operador *" value={formOp.codigo} onChange={v => setFormOp(f => ({ ...f, codigo: v.toUpperCase() }))} placeholder="Ex: 01, JOAO, GRC1" />
+          <div>
+            <label className="text-slate-300 text-sm font-medium block mb-1.5">Código do operador * (4 dígitos)</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              value={formOp.codigo}
+              onChange={e => setFormOp(f => ({ ...f, codigo: e.target.value.replace(/\D/g, '') }))}
+              placeholder="Ex: 0001"
+              disabled={editandoOp?.codigo === '0000'}
+              className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2.5 text-white text-xl font-mono tracking-widest focus:outline-none focus:border-amber-500 disabled:opacity-50"
+            />
+            {editandoOp?.codigo === '0000' && (
+              <p className="text-amber-500 text-xs mt-1">Código do ADM não pode ser alterado.</p>
+            )}
+          </div>
           <div>
             <label className="text-slate-300 text-sm font-medium block mb-1.5">
               {editandoOp ? 'Novo PIN (deixe em branco para manter)' : 'PIN numérico *'}

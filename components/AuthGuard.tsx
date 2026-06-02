@@ -4,7 +4,11 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { getSessao } from '@/lib/auth'
 
+// Rotas acessíveis sem login
 const PUBLICAS = ['/login']
+
+// Rotas restritas ao perfil admin
+const SOMENTE_ADMIN = ['/relatorios', '/configuracoes']
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router   = useRouter()
@@ -15,17 +19,19 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (PUBLICAS.includes(pathname)) { setOk(true); return }
 
     const sessao = getSessao()
-    if (sessao) { setOk(true); return }
 
-    // Verifica se há operadores cadastrados
-    fetch('/api/operadores').then(r => r.json()).then((ops: unknown[]) => {
-      if (ops.length === 0) {
-        // Sem operadores: vai para login (que mostra setup)
-        router.replace('/login')
-      } else {
-        router.replace('/login')
-      }
-    })
+    if (!sessao) {
+      router.replace('/login')
+      return
+    }
+
+    const restrita = SOMENTE_ADMIN.some(r => pathname === r || pathname.startsWith(r + '/'))
+    if (restrita && sessao.perfil !== 'admin') {
+      router.replace('/mesas')
+      return
+    }
+
+    setOk(true)
   }, [pathname, router])
 
   if (!ok) {
