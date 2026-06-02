@@ -87,6 +87,15 @@ export function migrate(db: Database.Database) {
       chave TEXT PRIMARY KEY,
       valor TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS operadores (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome       TEXT    NOT NULL,
+      codigo     TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+      senha_hash TEXT    NOT NULL,
+      ativo      INTEGER DEFAULT 1,
+      criado_em  TEXT    DEFAULT (datetime('now','localtime'))
+    );
   `)
 
   seedInicial(db)
