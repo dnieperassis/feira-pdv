@@ -16,6 +16,31 @@ export async function GET(_req: Request, { params }: Params) {
   return NextResponse.json(row)
 }
 
+// DELETE /api/comandas/[id] — cancela comanda e libera mesa
+export async function DELETE(_req: Request, { params }: Params) {
+  const { id } = await params
+  const db = getDb()
+
+  const comanda = db.prepare(
+    "SELECT * FROM comandas WHERE id = ? AND status = 'aberta'"
+  ).get(id) as { id: number; mesa_id: number | null } | undefined
+
+  if (!comanda) return NextResponse.json({ error: 'Comanda não encontrada' }, { status: 404 })
+
+  db.transaction(() => {
+    // Cancela todos os itens pendentes
+    db.prepare("UPDATE comanda_itens SET status = 'cancelado' WHERE comanda_id = ? AND status = 'pendente'").run(id)
+    // Cancela a comanda
+    db.prepare("UPDATE comandas SET status = 'cancelada', fechada_em = datetime('now','localtime') WHERE id = ?").run(id)
+    // Libera a mesa
+    if (comanda.mesa_id) {
+      db.prepare("UPDATE mesas SET status = 'livre' WHERE id = ?").run(comanda.mesa_id)
+    }
+  })()
+
+  return NextResponse.json({ ok: true })
+}
+
 // PATCH /api/comandas/[id] — trocar mesa
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params

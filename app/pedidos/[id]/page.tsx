@@ -78,6 +78,19 @@ export default function PedidosPage() {
     carregarComanda()
   }
 
+  async function liberarMesa() {
+    const itenAtivos = itens.filter(i => i.status !== 'cancelado')
+    const msg = itenAtivos.length > 0
+      ? `Há ${itenAtivos.length} item(s) lançado(s). Cancelar tudo e liberar a mesa?`
+      : 'Liberar a mesa sem nenhum pedido?'
+
+    if (!confirm(msg)) return
+
+    const res = await fetch(`/api/comandas/${id}`, { method: 'DELETE' })
+    if (res.ok) router.push('/mesas')
+    else alert('Erro ao liberar mesa')
+  }
+
   async function cancelarItem(item: ComandaItem) {
     const naoCozinha = item.status === 'pendente'
     const msg = naoCozinha
@@ -207,6 +220,9 @@ export default function PedidosPage() {
                 disabled={itens.length === 0}
               >
                 Fechar Conta
+              </Button>
+              <Button variant="danger" size="md" onClick={liberarMesa}>
+                🚫 Liberar Mesa
               </Button>
               <Button variant="ghost" size="md" onClick={() => router.push('/mesas')}>
                 ← Mesas

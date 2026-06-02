@@ -56,7 +56,16 @@ export default function MesasPage() {
       } else {
         alert('Erro ao abrir comanda')
       }
-    } else {
+    } else if (mesa.comanda_id) {
+      // Mesa ocupada sem nenhum item: oferece liberação direta
+      if (!mesa.total_comanda) {
+        const liberar = confirm(`Mesa ${mesa.numero} está ocupada mas sem pedidos.\n\nLiberar mesa agora?`)
+        if (liberar) {
+          await fetch(`/api/comandas/${mesa.comanda_id}`, { method: 'DELETE' })
+          carregar()
+        }
+        return
+      }
       router.push(`/pedidos/${mesa.comanda_id}`)
     }
   }
