@@ -77,6 +77,18 @@ export default function PedidosPage() {
     carregarComanda()
   }
 
+  async function cancelarItem(item: ComandaItem) {
+    const naoCozinha = item.status === 'pendente'
+    const msg = naoCozinha
+      ? null
+      : `"${item.produto_nome}" já foi enviado para a cozinha (${item.status}). Confirmar cancelamento?`
+
+    if (msg && !confirm(msg)) return
+
+    await fetch(`/api/comandas/${id}/itens/${item.id}`, { method: 'DELETE' })
+    carregarComanda()
+  }
+
   async function enviarCozinha() {
     setEnviando(true)
     const res = await fetch(`/api/comandas/${id}/cozinha`, { method: 'POST' })
@@ -254,20 +266,36 @@ export default function PedidosPage() {
                 <div
                   key={item.id}
                   className={[
-                    'flex items-start justify-between gap-2 py-2 border-b border-slate-800',
-                    item.status === 'cancelado' ? 'opacity-40' : '',
+                    'flex items-start justify-between gap-1 py-2 border-b border-slate-800',
+                    item.status === 'cancelado' ? 'opacity-35 line-through' : '',
                   ].join(' ')}
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm" title={item.status}>{STATUS_ICON[item.status]}</span>
+                      <span className="text-sm shrink-0" title={item.status}>{STATUS_ICON[item.status]}</span>
                       <p className="text-white text-sm font-medium truncate">{item.produto_nome}</p>
                     </div>
                     <p className="text-slate-400 text-xs ml-5">x{item.quantidade}</p>
                   </div>
-                  <span className="text-amber-400 text-sm font-semibold shrink-0">
-                    R$ {item.total.toFixed(2)}
-                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className="text-amber-400 text-sm font-semibold">
+                      R$ {item.total.toFixed(2)}
+                    </span>
+                    {item.status !== 'cancelado' && item.status !== 'entregue' && (
+                      <button
+                        onClick={() => cancelarItem(item)}
+                        title="Cancelar item"
+                        className={[
+                          'ml-1 w-6 h-6 flex items-center justify-center rounded-lg text-xs font-bold transition-colors',
+                          item.status === 'pendente'
+                            ? 'text-slate-500 hover:text-red-400 hover:bg-red-900/30'
+                            : 'text-amber-500 hover:text-red-400 hover:bg-red-900/30',
+                        ].join(' ')}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
