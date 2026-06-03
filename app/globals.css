@@ -172,8 +172,31 @@ button {
   }
   .cp-footer-linha { color: #7c1d00; font-size: 9pt; opacity: 0.75; margin-bottom: 2mm; text-shadow: 0 0 4px rgba(255,255,255,0.8); }
   .cp-footer-txt   { font-size: 12pt; color: #1c0500; font-style: italic; font-weight: 600; text-shadow: 0 0 8px rgba(255,255,255,0.9); margin: 0 0 1.5mm; }
-  .cp-footer-local { font-size: 10pt; color: #7c1d00; font-weight: bold; text-shadow: 0 0 6px rgba(255,255,255,0.85); margin: 0 0 1mm; }
-  .cp-footer-data  { font-size: 8.5pt; color: rgba(28,5,0,0.55); margin: 0; }
+  .cp-footer-local { font-size: 10pt; color: #7c1d00; font-weight: bold; text-shadow: 0 0 6px rgba(255,255,255,0.85); margin: 0 0 2mm; }
+
+  /* WhatsApp */
+  .cp-wa-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3mm;
+    margin-top: 1mm;
+  }
+  .cp-wa-svg {
+    width: 18pt;
+    height: 18pt;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 3px rgba(255,255,255,0.7));
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .cp-wa-num {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #128C7E;
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px rgba(255,255,255,0.95), 1px 1px 0 rgba(255,255,255,0.7);
+  }
 
   /* ── KOT (já existente) ─────────────────────────────── */
   .no-print { display: none !important; }

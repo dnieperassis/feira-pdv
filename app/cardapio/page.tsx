@@ -24,7 +24,7 @@ export default function CardapioPage() {
   const [form, setForm]               = useState<Form>(formVazio)
   const [salvando, setSalvando]       = useState(false)
   const [erro, setErro]               = useState('')
-  const [config, setConfig]           = useState({ nome_estabelecimento: '', cidade: '' })
+  const [config, setConfig]           = useState({ nome_estabelecimento: '', cidade: '', telefone: '' })
 
   const carregar = useCallback(async () => {
     const [rp, rc, rcfg] = await Promise.all([
@@ -35,7 +35,7 @@ export default function CardapioPage() {
     setProdutos(await rp.json())
     setCategorias(await rc.json())
     const cfg = await rcfg.json()
-    setConfig({ nome_estabelecimento: cfg.nome_estabelecimento, cidade: cfg.cidade })
+    setConfig({ nome_estabelecimento: cfg.nome_estabelecimento, cidade: cfg.cidade, telefone: cfg.telefone ?? '' })
   }, [])
 
   function imprimirCardapio() {
@@ -265,6 +265,7 @@ export default function CardapioPage() {
         categorias={categorias}
         nome={config.nome_estabelecimento}
         cidade={config.cidade}
+        telefone={config.telefone}
       />
     </div>
   )

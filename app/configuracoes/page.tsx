@@ -9,6 +9,7 @@ interface Config {
   cidade:               string
   chave_pix:            string
   numero_mesas:         string
+  telefone:             string
 }
 
 interface Operador { id: number; nome: string; codigo: string; perfil: string; ativo: number }
@@ -22,6 +23,7 @@ export default function ConfiguracoesPage() {
     cidade:               '',
     chave_pix:            '',
     numero_mesas:         '10',
+    telefone:             '',
   })
   const [salvando, setSalvando] = useState(false)
   const [salvo, setSalvo]       = useState(false)
@@ -173,6 +175,26 @@ export default function ConfiguracoesPage() {
           )}
           <p className="text-slate-500 text-xs mt-2">
             Ao salvar, mesas serão criadas ou removidas automaticamente conforme o número informado.
+          </p>
+        </div>
+      </section>
+
+      {/* Contato */}
+      <section className="bg-slate-900 border border-slate-700 rounded-2xl p-6 flex flex-col gap-4">
+        <h2 className="text-slate-300 font-semibold text-sm uppercase tracking-wide">Contato</h2>
+        <div>
+          <label className="text-slate-300 text-sm font-medium block mb-1.5">
+            📱 WhatsApp / Telefone
+          </label>
+          <input
+            type="tel"
+            value={config.telefone}
+            onChange={e => setConfig(c => ({ ...c, telefone: e.target.value }))}
+            placeholder="(11) 99999-9999"
+            className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white text-lg font-medium focus:outline-none focus:border-green-500 placeholder:text-slate-600 tracking-wide"
+          />
+          <p className="text-slate-500 text-xs mt-1.5">
+            Aparece no rodapé do Cardápio PDF com ícone do WhatsApp.
           </p>
         </div>
       </section>

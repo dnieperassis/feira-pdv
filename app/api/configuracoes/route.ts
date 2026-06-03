@@ -8,6 +8,7 @@ const DEFAULTS: Record<string, string> = {
   cidade:               'São Paulo',
   chave_pix:            '',
   numero_mesas:         '10',
+  telefone:             '',
 }
 
 export async function GET() {
