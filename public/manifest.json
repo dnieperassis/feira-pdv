@@ -3,22 +3,40 @@
   "short_name": "FeiraPDV",
   "description": "Controle de vendas, mesas e pedidos para barraca de feira",
   "start_url": "/mesas",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#f59e0b",
-  "orientation": "landscape",
+  "orientation": "any",
+  "lang": "pt-BR",
+  "categories": ["business", "food"],
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Feira PDV — Tela de Mesas"
     }
   ]
 }
