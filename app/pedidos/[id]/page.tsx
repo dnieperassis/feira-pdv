@@ -19,6 +19,76 @@ const STATUS_ICON: Record<string, string> = {
   cancelado:  '✖',
 }
 
+// Painel lateral/drawer dos pedidos — reutilizado em desktop e mobile
+function PainelPedidos({
+  itens, pendentes, total, onCancelar, semHeader,
+}: {
+  itens: ComandaItem[]
+  pendentes: ComandaItem[]
+  total: number
+  onCancelar: (item: ComandaItem) => void
+  semHeader?: boolean
+}) {
+  return (
+    <>
+      {!semHeader && (
+        <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+          <span className="text-slate-300 font-semibold text-sm uppercase tracking-wide">Pedidos</span>
+          {pendentes.length > 0 && (
+            <span className="text-xs bg-amber-500 text-gray-950 font-bold px-2 py-0.5 rounded-full">
+              {pendentes.length} pendente{pendentes.length > 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+      )}
+      <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-1 min-h-[200px]">
+        {itens.length === 0 ? (
+          <p className="text-slate-500 text-sm text-center mt-8">Nenhum item adicionado</p>
+        ) : itens.map(item => (
+          <div
+            key={item.id}
+            className={[
+              'flex items-start justify-between gap-1 py-2 border-b border-slate-800',
+              item.status === 'cancelado' ? 'opacity-35 line-through' : '',
+            ].join(' ')}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm shrink-0" title={item.status}>{STATUS_ICON[item.status]}</span>
+                <p className="text-white text-sm font-medium truncate">{item.produto_nome}</p>
+              </div>
+              <p className="text-slate-400 text-xs ml-5">x{item.quantidade}</p>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="text-amber-400 text-sm font-semibold">R$ {brl(item.total)}</span>
+              {item.status !== 'cancelado' && item.status !== 'entregue' && (
+                <button
+                  onClick={() => onCancelar(item)}
+                  title="Cancelar item"
+                  className={[
+                    'ml-1 w-7 h-7 flex items-center justify-center rounded-lg text-sm font-bold transition-colors',
+                    item.status === 'pendente'
+                      ? 'text-slate-500 hover:text-red-400 hover:bg-red-900/30'
+                      : 'text-amber-500 hover:text-red-400 hover:bg-red-900/30',
+                  ].join(' ')}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="px-4 py-3 border-t border-slate-700 bg-slate-800">
+        <div className="flex justify-between items-center">
+          <span className="text-slate-300 font-semibold">Total</span>
+          <span className="text-amber-400 font-bold text-lg">R$ {brl(total)}</span>
+        </div>
+      </div>
+    </>
+  )
+}
+
 export default function PedidosPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
@@ -36,6 +106,9 @@ export default function PedidosPage() {
   const [modalTroca, setModalTroca]   = useState(false)
   const [mesasLivres, setMesasLivres] = useState<Mesa[]>([])
   const [trocando, setTrocando]       = useState(false)
+
+  // Drawer mobile do painel de pedidos
+  const [drawerAberto, setDrawerAberto] = useState(false)
 
   const carregarComanda = useCallback(async () => {
     const [r1, r2] = await Promise.all([
@@ -188,52 +261,81 @@ export default function PedidosPage() {
       {/* ── Layout principal ── */}
       <div className="flex flex-col h-full no-print">
 
-        {/* Header */}
-        <div className="bg-slate-900 border-b border-slate-700 px-4 py-2 shrink-0">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-3">
-              <span className="text-white font-bold text-lg">{tituloMesa}</span>
-              <span className="text-slate-400 text-sm">#{id}</span>
-              {comanda?.tipo === 'mesa' && (
-                <button
-                  onClick={abrirTrocaMesa}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors"
-                >
-                  ↔ Trocar Mesa
-                </button>
-              )}
-            </div>
-            <div className="flex items-center gap-2 flex-wrap justify-end">
-              <span className="text-amber-400 font-bold text-xl">R$ {brl(total)}</span>
-              <Button
-                variant="secondary"
-                size="md"
-                onClick={enviarCozinha}
-                disabled={pendentes.length === 0 || enviando}
+        {/* Header — compacto no mobile, ações principais visíveis */}
+        <div className="bg-slate-900 border-b border-slate-700 px-3 py-2 shrink-0">
+          {/* Linha 1: identificação + voltar */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                onClick={() => router.push('/mesas')}
+                className="text-slate-400 hover:text-white text-lg shrink-0 px-1"
+                title="Voltar para mesas"
               >
-                {enviando ? 'Enviando...' : `🍳 Cozinha${pendentes.length > 0 ? ` (${pendentes.length})` : ''}`}
-              </Button>
-              <Button
-                variant="success"
-                size="md"
-                onClick={() => router.push(`/caixa/${id}`)}
-                disabled={itens.length === 0}
-              >
-                Fechar Conta
-              </Button>
-              <Button variant="danger" size="md" onClick={liberarMesa}>
-                🚫 Liberar Mesa
-              </Button>
-              <Button variant="ghost" size="md" onClick={() => router.push('/mesas')}>
-                ← Mesas
-              </Button>
+                ←
+              </button>
+              <span className="text-white font-bold text-base sm:text-lg truncate">{tituloMesa}</span>
+              <span className="text-slate-500 text-xs shrink-0">#{id}</span>
             </div>
+            <span className="text-amber-400 font-bold text-lg sm:text-xl shrink-0">R$ {brl(total)}</span>
+          </div>
+
+          {/* Linha 2: botões de ação — scroll horizontal no mobile */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+            {comanda?.tipo === 'mesa' && (
+              <button
+                onClick={abrirTrocaMesa}
+                className="shrink-0 px-3 py-2 text-xs sm:text-sm rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium"
+              >
+                ↔ Trocar
+              </button>
+            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={enviarCozinha}
+              disabled={pendentes.length === 0 || enviando}
+              className="shrink-0"
+            >
+              {enviando ? '...' : `🍳 Cozinha${pendentes.length > 0 ? ` (${pendentes.length})` : ''}`}
+            </Button>
+            <Button
+              variant="success"
+              size="sm"
+              onClick={() => router.push(`/caixa/${id}`)}
+              disabled={itens.length === 0}
+              className="shrink-0"
+            >
+              Fechar Conta
+            </Button>
+            <Button variant="danger" size="sm" onClick={liberarMesa} className="shrink-0">
+              🚫 Liberar
+            </Button>
           </div>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
-          {/* Categorias */}
-          <div className="w-32 sm:w-40 bg-slate-900 border-r border-slate-700 flex flex-col gap-1 p-2 overflow-y-auto shrink-0">
+        {/* Categorias — barra horizontal no mobile / coluna lateral no desktop */}
+        <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+
+          {/* MOBILE: tabs horizontais */}
+          <div className="md:hidden flex gap-1 px-2 py-2 bg-slate-900 border-b border-slate-700 overflow-x-auto shrink-0">
+            {grupos.map(({ categoria }) => (
+              <button
+                key={categoria.id}
+                onClick={() => setCatAtiva(categoria.id)}
+                className={[
+                  'shrink-0 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors',
+                  catAtiva === categoria.id
+                    ? 'bg-amber-500 text-gray-950'
+                    : 'bg-slate-800 text-slate-300',
+                ].join(' ')}
+              >
+                {categoria.nome}
+              </button>
+            ))}
+          </div>
+
+          {/* DESKTOP: coluna lateral de categorias */}
+          <div className="hidden md:flex w-40 bg-slate-900 border-r border-slate-700 flex-col gap-1 p-2 overflow-y-auto shrink-0">
             {grupos.map(({ categoria }) => (
               <button
                 key={categoria.id}
@@ -251,8 +353,8 @@ export default function PedidosPage() {
           </div>
 
           {/* Produtos */}
-          <div className="flex-1 p-3 overflow-y-auto">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="flex-1 p-3 overflow-y-auto pb-24 md:pb-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {produtosAtivos.map(produto => (
                 <button
                   key={produto.id}
@@ -266,64 +368,65 @@ export default function PedidosPage() {
             </div>
           </div>
 
-          {/* Itens da comanda */}
-          <div className="w-56 sm:w-64 bg-slate-900 border-l border-slate-700 flex flex-col shrink-0">
-            <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
-              <span className="text-slate-300 font-semibold text-sm uppercase tracking-wide">Pedidos</span>
-              {pendentes.length > 0 && (
-                <span className="text-xs bg-amber-500 text-gray-950 font-bold px-2 py-0.5 rounded-full">
-                  {pendentes.length} pendente{pendentes.length > 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-            <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-1">
-              {itens.length === 0 ? (
-                <p className="text-slate-500 text-sm text-center mt-8">Nenhum item adicionado</p>
-              ) : itens.map(item => (
-                <div
-                  key={item.id}
-                  className={[
-                    'flex items-start justify-between gap-1 py-2 border-b border-slate-800',
-                    item.status === 'cancelado' ? 'opacity-35 line-through' : '',
-                  ].join(' ')}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm shrink-0" title={item.status}>{STATUS_ICON[item.status]}</span>
-                      <p className="text-white text-sm font-medium truncate">{item.produto_nome}</p>
-                    </div>
-                    <p className="text-slate-400 text-xs ml-5">x{item.quantidade}</p>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-amber-400 text-sm font-semibold">
-                      R$ {brl(item.total)}
-                    </span>
-                    {item.status !== 'cancelado' && item.status !== 'entregue' && (
-                      <button
-                        onClick={() => cancelarItem(item)}
-                        title="Cancelar item"
-                        className={[
-                          'ml-1 w-6 h-6 flex items-center justify-center rounded-lg text-xs font-bold transition-colors',
-                          item.status === 'pendente'
-                            ? 'text-slate-500 hover:text-red-400 hover:bg-red-900/30'
-                            : 'text-amber-500 hover:text-red-400 hover:bg-red-900/30',
-                        ].join(' ')}
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="px-4 py-3 border-t border-slate-700 bg-slate-800">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-300 font-semibold">Total</span>
-                <span className="text-amber-400 font-bold text-lg">R$ {brl(total)}</span>
-              </div>
-            </div>
+          {/* Painel de pedidos — fixo no desktop, drawer no mobile */}
+          <div
+            className={[
+              // Desktop: coluna lateral fixa
+              'hidden md:flex md:relative md:w-64 md:translate-y-0',
+              'bg-slate-900 border-l border-slate-700 flex-col shrink-0',
+            ].join(' ')}
+          >
+            <PainelPedidos
+              itens={itens}
+              pendentes={pendentes}
+              total={total}
+              onCancelar={cancelarItem}
+            />
           </div>
         </div>
+
+        {/* Botão flutuante MOBILE — abre o drawer */}
+        <button
+          onClick={() => setDrawerAberto(true)}
+          className="md:hidden fixed bottom-4 right-4 z-30 flex items-center gap-2 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-gray-950 font-bold px-5 py-3 rounded-full shadow-2xl shadow-amber-500/30 transition-transform active:scale-95"
+        >
+          🛒 {itens.length > 0 ? `${itens.length} item${itens.length > 1 ? 's' : ''} · R$ ${brl(total)}` : 'Pedidos'}
+        </button>
+
+        {/* Drawer MOBILE de pedidos */}
+        {drawerAberto && (
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+            onClick={() => setDrawerAberto(false)}
+          >
+            <div
+              className="absolute bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-700 rounded-t-3xl flex flex-col max-h-[85vh]"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-300 font-semibold uppercase tracking-wide text-sm">Pedidos</span>
+                  {pendentes.length > 0 && (
+                    <span className="text-xs bg-amber-500 text-gray-950 font-bold px-2 py-0.5 rounded-full">
+                      {pendentes.length} pendente{pendentes.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setDrawerAberto(false)}
+                  className="text-slate-400 hover:text-white text-2xl w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-800"
+                >×</button>
+              </div>
+              <PainelPedidos
+                itens={itens}
+                pendentes={pendentes}
+                total={total}
+                onCancelar={cancelarItem}
+                semHeader
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Modal Trocar Mesa ── */}
