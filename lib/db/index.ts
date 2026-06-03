@@ -3,7 +3,11 @@ import path from 'path'
 import fs from 'fs'
 import { migrate } from './schema'
 
-const DB_PATH = path.join(process.cwd(), 'data', 'feira.db')
+// Em produção (Railway/Render), definir DB_PATH via variável de ambiente
+// apontando para o volume persistente. Ex: DB_PATH=/data/feira.db
+const DB_PATH = process.env.DB_PATH
+  ? process.env.DB_PATH
+  : path.join(process.cwd(), 'data', 'feira.db')
 
 let _db: Database.Database | null = null
 
