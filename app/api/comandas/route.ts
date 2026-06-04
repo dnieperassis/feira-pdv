@@ -16,7 +16,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { mesa_id, tipo = 'mesa', observacao } = await req.json()
+  const { mesa_id, tipo = 'mesa', observacao, operador_id } = await req.json()
   const db = getDb()
 
   if (tipo === 'mesa' && mesa_id) {
@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
   }
 
   const result = db.prepare(`
-    INSERT INTO comandas (mesa_id, tipo, observacao) VALUES (?, ?, ?)
-  `).run(mesa_id ?? null, tipo, observacao ?? null)
+    INSERT INTO comandas (mesa_id, tipo, observacao, operador_id) VALUES (?, ?, ?, ?)
+  `).run(mesa_id ?? null, tipo, observacao ?? null, operador_id ?? null)
 
   if (tipo === 'mesa' && mesa_id) {
     db.prepare("UPDATE mesas SET status = 'ocupada' WHERE id = ?").run(mesa_id)

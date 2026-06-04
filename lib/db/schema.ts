@@ -100,12 +100,17 @@ export function migrate(db: Database.Database) {
     );
   `)
 
-  // Migração incremental: adiciona coluna perfil se não existir (banco já existente)
-  const colunas = db.prepare("PRAGMA table_info(operadores)").all() as { name: string }[]
-  if (!colunas.find(c => c.name === 'perfil')) {
+  // Migração: coluna perfil em operadores
+  const colsOp = db.prepare("PRAGMA table_info(operadores)").all() as { name: string }[]
+  if (!colsOp.find(c => c.name === 'perfil')) {
     db.exec("ALTER TABLE operadores ADD COLUMN perfil TEXT NOT NULL DEFAULT 'operador'")
-    // ADM existente (código 0000) vira admin
     db.exec("UPDATE operadores SET perfil = 'admin' WHERE codigo = '0000'")
+  }
+
+  // Migração: operador_id em comandas (para relatório por garçom)
+  const colsCo = db.prepare("PRAGMA table_info(comandas)").all() as { name: string }[]
+  if (!colsCo.find(c => c.name === 'operador_id')) {
+    db.exec("ALTER TABLE comandas ADD COLUMN operador_id INTEGER REFERENCES operadores(id) ON DELETE SET NULL")
   }
 
   seedInicial(db)
