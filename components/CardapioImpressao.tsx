@@ -80,21 +80,23 @@ export function CardapioImpressao({ produtos, categorias, nome, cidade, telefone
         ))}
       </div>
 
-      {/* RODAPÉ */}
-      <div className="cp-footer">
-        <div className="cp-footer-linha">✦ ────────────────────────────────────────── ✦</div>
-        <p className="cp-footer-txt">Bom apetite! Qualidade e sabor em cada pedido. 😊</p>
-        {cidade && <p className="cp-footer-local">📍 {cidade}</p>}
-        {telefone && (
-          <div className="cp-wa-row">
-            <WhatsAppIcon />
-            <span className="cp-wa-num">{formatTel(telefone)}</span>
-          </div>
-        )}
+      {/* RODAPÉ + IMAGEM LADO A LADO */}
+      <div className="cp-rodape-row">
+        {/* Texto do rodapé à esquerda */}
+        <div className="cp-footer">
+          <div className="cp-footer-linha">✦ ──────────────────── ✦</div>
+          <p className="cp-footer-txt">Bom apetite! Qualidade e sabor em cada pedido. 😊</p>
+          {cidade && <p className="cp-footer-local">📍 {cidade}</p>}
+          {telefone && (
+            <div className="cp-wa-row">
+              <WhatsAppIcon />
+              <span className="cp-wa-num">{formatTel(telefone)}</span>
+            </div>
+          )}
+        </div>
+        {/* Imagem decorativa à direita */}
+        <div className="cp-decoracao-imagem" />
       </div>
-
-      {/* IMAGEM DECORATIVA - Canto inferior direito */}
-      <div className="cp-decoracao-imagem" />
 
     </div>
   )

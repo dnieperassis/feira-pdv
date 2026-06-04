@@ -45,31 +45,33 @@ button {
   #cardapio-pdf {
     display: block !important;
     visibility: visible !important;
-    position: relative;
+    position: fixed;
+    inset: 0;
     width: 210mm;
     min-height: 297mm;
     z-index: 9999;
     font-family: Georgia, 'Times New Roman', serif;
     color: #3b0a00;
-    background: white;
+    background: #fff9f0;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  #cardapio-pdf,
-  .cardapio-container { visibility: visible !important; }
   #cardapio-pdf * { visibility: visible !important; }
 
-  /* ── Imagem decorativa no canto inferior direito ── */
+  /* ── Rodapé + imagem em flex row ── */
+  .cp-rodape-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  /* ── Imagem decorativa à direita no rodapé ── */
   .cp-decoracao-imagem {
-    position: absolute;
-    bottom: 0;
-    right: 0;
     width: 80mm;
-    height: 70mm;
+    height: 72mm;
+    flex-shrink: 0;
     background: url('/pasteis-bg.jpg') center / cover no-repeat;
-    opacity: 0.75;
-    pointer-events: none;
-    visibility: visible !important;
+    opacity: 0.82;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -171,16 +173,15 @@ button {
     text-shadow: 0 0 6px rgba(255,255,255,0.85);
   }
 
-  /* ── RODAPÉ ── */
+  /* ── RODAPÉ (coluna esquerda do flex) ── */
   .cp-footer {
+    flex: 1;
     text-align: left;
-    padding: 4mm 18mm 10mm;
-    /* Margem direita para a imagem não sobrepor o texto */
-    padding-right: 95mm;
+    padding: 4mm 6mm 8mm 14mm;
   }
-  .cp-footer-linha { color: #7c1d00; font-size: 9pt; opacity: 0.75; margin-bottom: 2mm; text-shadow: 0 0 4px rgba(255,255,255,0.8); }
-  .cp-footer-txt   { font-size: 12pt; color: #1c0500; font-style: italic; font-weight: 600; text-shadow: 0 0 8px rgba(255,255,255,0.9); margin: 0 0 1.5mm; }
-  .cp-footer-local { font-size: 10pt; color: #7c1d00; font-weight: bold; text-shadow: 0 0 6px rgba(255,255,255,0.85); margin: 0 0 2mm; }
+  .cp-footer-linha { color: #7c1d00; font-size: 9pt; opacity: 0.75; margin-bottom: 2mm; }
+  .cp-footer-txt   { font-size: 12pt; color: #1c0500; font-style: italic; font-weight: 600; margin: 0 0 1.5mm; }
+  .cp-footer-local { font-size: 10pt; color: #7c1d00; font-weight: bold; margin: 0 0 2mm; }
 
   /* WhatsApp */
   .cp-wa-row {
