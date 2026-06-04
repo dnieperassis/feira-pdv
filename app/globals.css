@@ -51,17 +51,9 @@ button {
     z-index: 9999;
     font-family: Georgia, 'Times New Roman', serif;
     color: #3b0a00;
+    background: white;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-
-    /* Fundo degradado limpo — sem imagem poluindo */
-    background: linear-gradient(
-      to bottom,
-      rgba(255, 250, 245, 0.95) 0%,   /* header: muito claro */
-      rgba(255, 248, 240, 0.97) 35%,  /* meio: limpo */
-      rgba(255, 246, 235, 0.96) 65%,  /* corpo: legível */
-      rgba(255, 244, 230, 0.95) 100%  /* rodapé: consistente */
-    );
   }
   #cardapio-pdf,
   .cardapio-container { visibility: visible !important; }
@@ -254,52 +246,56 @@ button {
   .cupom-tabela-fiscal {
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
   }
   .cupom-tabela-fiscal thead {
-    border-bottom: 2px solid #000;
+    border-bottom: 1px solid #000;
   }
   .cupom-tabela-fiscal th {
-    text-align: left;
-    padding: 2px 1px;
+    text-align: center;
+    padding: 1px 0;
     font-weight: bold;
-    font-size: 10px;
+    font-size: 9px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+  }
+  .cupom-tabela-fiscal tbody tr {
+    border-bottom: 1px dotted #000;
   }
   .cupom-tabela-fiscal td {
-    padding: 2px 1px;
+    padding: 1px 0.5px;
     vertical-align: top;
+    font-family: 'Courier New', monospace;
   }
 
   /* Colunas da tabela fiscal */
   .cupom-col-item {
-    width: 12%;
+    width: 8%;
     text-align: center;
+    border-right: 1px solid #000;
   }
   .cupom-col-desc {
     width: 40%;
     text-align: left;
+    padding-left: 1px;
+    border-right: 1px solid #000;
     word-break: break-word;
   }
   .cupom-col-qtd {
-    width: 12%;
+    width: 10%;
     text-align: center;
+    border-right: 1px solid #000;
   }
   .cupom-col-unitario {
-    width: 18%;
+    width: 20%;
     text-align: right;
-    padding-right: 2px;
+    padding-right: 1px;
+    border-right: 1px solid #000;
   }
   .cupom-col-total {
-    width: 18%;
+    width: 20%;
     text-align: right;
-    font-weight: bold;
-  }
-
-  .cupom-divider-tabela {
-    border-top: 1px solid #000;
-    margin: 2px 0;
+    padding-right: 1px;
   }
 
   /* ── Linhas de total ── */

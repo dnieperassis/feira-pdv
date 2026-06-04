@@ -149,22 +149,17 @@ export default function CaixaPage() {
         </div>
         <div className="cupom-divider" />
 
-        {/* ── Cabeçalho da tabela ── */}
+        {/* ── Tabela Fiscal (headers + itens) ── */}
         <table className="cupom-tabela-fiscal">
           <thead>
             <tr>
               <th className="cupom-col-item">Item</th>
               <th className="cupom-col-desc">Descrição</th>
-              <th className="cupom-col-qtd">Qtdade</th>
-              <th className="cupom-col-unitario">Vl. Unitário</th>
-              <th className="cupom-col-total">Vl. Total</th>
+              <th className="cupom-col-qtd">Qtd</th>
+              <th className="cupom-col-unitario">Vl.Unit</th>
+              <th className="cupom-col-total">Vl.Tot</th>
             </tr>
           </thead>
-        </table>
-        <div className="cupom-divider-tabela" />
-
-        {/* ── Itens agrupados ── */}
-        <table className="cupom-tabela-fiscal">
           <tbody>
             {itensPorProduto.map((item, idx) => (
               <tr key={item.id}>
@@ -180,11 +175,7 @@ export default function CaixaPage() {
 
         <div className="cupom-divider" />
 
-        {/* ── Totalizações ── */}
-        <div className="cupom-total-linha">
-          <span className="cupom-label">SUBTOTAL</span>
-          <span className="cupom-valor">R$ {brl(total)}</span>
-        </div>
+        {/* ── Totalizações (sem SUBTOTAL) ── */}
         <div className="cupom-total-linha cupom-destaque">
           <span className="cupom-label">TOTAL</span>
           <span className="cupom-valor">R$ {brl(total)}</span>
