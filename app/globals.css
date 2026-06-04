@@ -62,12 +62,12 @@ button {
   /* ── Imagem decorativa no canto inferior direito ── */
   .cp-decoracao-imagem {
     position: absolute;
-    bottom: 20mm;
-    right: 15mm;
-    width: 85mm;
-    height: 85mm;
-    background: url('/pasteis-bg.jpg') center / contain no-repeat;
-    opacity: 0.7;
+    bottom: 0;
+    right: 0;
+    width: 80mm;
+    height: 70mm;
+    background: url('/pasteis-bg.jpg') center / cover no-repeat;
+    opacity: 0.75;
     pointer-events: none;
     visibility: visible !important;
     -webkit-print-color-adjust: exact;
@@ -173,8 +173,10 @@ button {
 
   /* ── RODAPÉ ── */
   .cp-footer {
-    text-align: center;
-    padding: 4mm 18mm 8mm;
+    text-align: left;
+    padding: 4mm 18mm 10mm;
+    /* Margem direita para a imagem não sobrepor o texto */
+    padding-right: 95mm;
   }
   .cp-footer-linha { color: #7c1d00; font-size: 9pt; opacity: 0.75; margin-bottom: 2mm; text-shadow: 0 0 4px rgba(255,255,255,0.8); }
   .cp-footer-txt   { font-size: 12pt; color: #1c0500; font-style: italic; font-weight: 600; text-shadow: 0 0 8px rgba(255,255,255,0.9); margin: 0 0 1.5mm; }
@@ -184,7 +186,7 @@ button {
   .cp-wa-row {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 3mm;
     margin-top: 1mm;
   }
