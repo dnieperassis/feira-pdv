@@ -70,7 +70,7 @@ button {
     width: 80mm;
     height: 72mm;
     flex-shrink: 0;
-    background: url('/pasteis-bg.jpg') center / cover no-repeat;
+    background: url('/pasteis-bg.png') center / cover no-repeat;
     opacity: 0.82;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
@@ -180,16 +180,20 @@ button {
     padding: 4mm 6mm 8mm 14mm;
   }
   .cp-footer-linha { color: #7c1d00; font-size: 9pt; opacity: 0.75; margin-bottom: 2mm; }
-  .cp-footer-txt   { font-size: 12pt; color: #1c0500; font-style: italic; font-weight: 600; margin: 0 0 1.5mm; }
-  .cp-footer-local { font-size: 10pt; color: #7c1d00; font-weight: bold; margin: 0 0 2mm; }
+  .cp-footer-txt   { font-size: 12pt; color: #1c0500; font-style: italic; font-weight: 600; margin: 0 0 2mm; }
+  .cp-footer-local { font-size: 10pt; color: #7c1d00; font-weight: bold; margin: 0; }
 
-  /* WhatsApp */
+  /* WhatsApp + Cidade na mesma linha */
+  .cp-footer-contato {
+    display: flex;
+    align-items: center;
+    gap: 6mm;
+    flex-wrap: wrap;
+  }
   .cp-wa-row {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    gap: 3mm;
-    margin-top: 1mm;
+    gap: 2mm;
   }
   .cp-wa-svg {
     width: 18pt;
