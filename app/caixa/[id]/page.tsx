@@ -84,6 +84,20 @@ export default function CaixaPage() {
     hour: '2-digit', minute: '2-digit',
   })
 
+  // Agrupar itens por produto para cupom consolidado
+  const itensPorProduto = itens.reduce((acc, item) => {
+    const existing = acc.find(x => x.produto_id === item.produto_id)
+    if (existing) {
+      existing.quantidade += item.quantidade
+      existing.total += item.total
+    } else {
+      acc.push({ ...item })
+    }
+    return acc
+  }, [] as ComandaItem[])
+
+  const valorPorPessoa = total / 2
+
   async function imprimir() {
     window.print()
   }
@@ -127,31 +141,65 @@ export default function CaixaPage() {
         <div className="cupom-center">
           <strong>{config.nome_estabelecimento || 'FEIRA PDV'}</strong>
         </div>
-        <div className="cupom-center" style={{ fontSize: 12 }}>
+        <div className="cupom-center" style={{ fontSize: 11 }}>
+          CUPOM NÃO FISCAL
+        </div>
+        <div className="cupom-center" style={{ fontSize: 10 }}>
           {tituloMesa} · {dataHora}
         </div>
         <div className="cupom-divider" />
-        <table className="cupom-table">
+
+        {/* ── Cabeçalho da tabela ── */}
+        <table className="cupom-tabela-fiscal">
+          <thead>
+            <tr>
+              <th className="cupom-col-item">Item</th>
+              <th className="cupom-col-desc">Descrição</th>
+              <th className="cupom-col-qtd">Qtdade</th>
+              <th className="cupom-col-unitario">Vl. Unitário</th>
+              <th className="cupom-col-total">Vl. Total</th>
+            </tr>
+          </thead>
+        </table>
+        <div className="cupom-divider-tabela" />
+
+        {/* ── Itens agrupados ── */}
+        <table className="cupom-tabela-fiscal">
           <tbody>
-            {itens.map(item => (
+            {itensPorProduto.map((item, idx) => (
               <tr key={item.id}>
-                <td>{item.quantidade}x {item.produto_nome}</td>
-                <td className="cupom-right">R$ {brl(item.total)}</td>
+                <td className="cupom-col-item">{String(idx + 1).padStart(2, '0')}</td>
+                <td className="cupom-col-desc">{item.produto_nome}</td>
+                <td className="cupom-col-qtd">{String(item.quantidade).padStart(2, '0')}</td>
+                <td className="cupom-col-unitario">R$ {brl(item.total / item.quantidade)}</td>
+                <td className="cupom-col-total">R$ {brl(item.total)}</td>
               </tr>
             ))}
           </tbody>
         </table>
+
         <div className="cupom-divider" />
-        <div className="cupom-total">
-          <span>TOTAL</span>
-          <span>R$ {brl(total)}</span>
+
+        {/* ── Totalizações ── */}
+        <div className="cupom-total-linha">
+          <span className="cupom-label">SUBTOTAL</span>
+          <span className="cupom-valor">R$ {brl(total)}</span>
         </div>
+        <div className="cupom-total-linha cupom-destaque">
+          <span className="cupom-label">TOTAL</span>
+          <span className="cupom-valor">R$ {brl(total)}</span>
+        </div>
+        <div className="cupom-total-linha">
+          <span className="cupom-label">Por Pessoa (÷2)</span>
+          <span className="cupom-valor">R$ {brl(valorPorPessoa)}</span>
+        </div>
+
         <div className="cupom-divider" />
-        <div className="cupom-center" style={{ fontSize: 12 }}>
+        <div className="cupom-center" style={{ fontSize: 10 }}>
           Pagamento: {FORMAS.find(f => f.id === forma)?.label ?? forma}
         </div>
         {forma === 'dinheiro' && troco > 0 && (
-          <div className="cupom-center" style={{ fontSize: 12 }}>
+          <div className="cupom-center" style={{ fontSize: 10 }}>
             Troco: R$ {brl(troco)}
           </div>
         )}

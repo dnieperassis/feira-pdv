@@ -47,7 +47,7 @@ export function CardapioImpressao({ produtos, categorias, nome, cidade, telefone
     .filter(g => g.itens.length > 0)
 
   return (
-    <div id="cardapio-pdf" aria-hidden="true">
+    <div id="cardapio-pdf" aria-hidden="true" className="cardapio-container">
 
       {/* CABEÇALHO */}
       <div className="cp-header">
@@ -92,6 +92,9 @@ export function CardapioImpressao({ produtos, categorias, nome, cidade, telefone
           </div>
         )}
       </div>
+
+      {/* IMAGEM DECORATIVA - Canto inferior direito */}
+      <div className="cp-decoracao-imagem" />
 
     </div>
   )

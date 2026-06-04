@@ -54,19 +54,32 @@ button {
     color: #3b0a00;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    overflow: hidden;
 
-    /* Overlay suave — foto dos pastéis aparece com destaque */
-    background:
-      linear-gradient(
-        to bottom,
-        rgba(255, 248, 235, 0.55) 0%,   /* header: semi-transparente */
-        rgba(255, 244, 220, 0.60) 35%,  /* meio: levemente mais opaco */
-        rgba(255, 240, 210, 0.62) 65%,  /* corpo: texto legível */
-        rgba(255, 235, 195, 0.58) 100%  /* rodapé: mais aberto */
-      ),
-      url('/pasteis-bg.jpg') center top / cover no-repeat;
+    /* Fundo degradado limpo — sem imagem poluindo */
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 250, 245, 0.95) 0%,   /* header: muito claro */
+      rgba(255, 248, 240, 0.97) 35%,  /* meio: limpo */
+      rgba(255, 246, 235, 0.96) 65%,  /* corpo: legível */
+      rgba(255, 244, 230, 0.95) 100%  /* rodapé: consistente */
+    );
   }
   #cardapio-pdf * { visibility: visible !important; }
+
+  /* ── Imagem decorativa no canto inferior direito ── */
+  .cp-decoracao-imagem {
+    position: absolute;
+    bottom: 15mm;
+    right: 12mm;
+    width: 90mm;
+    height: 90mm;
+    background: url('/pasteis-bg.jpg') center / contain no-repeat;
+    opacity: 0.75;
+    pointer-events: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 
   /* ── CABEÇALHO ── */
   .cp-header {
@@ -218,11 +231,11 @@ button {
   .kot-obs  { margin: 0 0 4px 36px; font-size: 13px; color: #444; width: 100%; }
   .kot-total { text-align: center; margin-top: 8px; font-size: 13px; }
 
-  /* ── Cupom (já existente) ───────────────────────────── */
+  /* ── Cupom (reformulado - layout fiscal) ────────────── */
   .cupom-print {
     display: block !important;
     font-family: 'Courier New', monospace;
-    font-size: 14px;
+    font-size: 13px;
     width: 80mm;
     margin: 0 auto;
     padding: 6px;
@@ -231,14 +244,79 @@ button {
   }
   .cupom-center  { text-align: center; line-height: 1.8; }
   .cupom-divider { border-top: 1px dashed #000; margin: 6px 0; }
-  .cupom-table   { width: 100%; border-collapse: collapse; }
-  .cupom-table td { padding: 2px 0; vertical-align: top; }
-  .cupom-right   { text-align: right; white-space: nowrap; }
-  .cupom-total   {
+
+  /* ── Tabela Fiscal (5 colunas) ── */
+  .cupom-tabela-fiscal {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .cupom-tabela-fiscal thead {
+    border-bottom: 2px solid #000;
+  }
+  .cupom-tabela-fiscal th {
+    text-align: left;
+    padding: 2px 1px;
+    font-weight: bold;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .cupom-tabela-fiscal td {
+    padding: 2px 1px;
+    vertical-align: top;
+  }
+
+  /* Colunas da tabela fiscal */
+  .cupom-col-item {
+    width: 12%;
+    text-align: center;
+  }
+  .cupom-col-desc {
+    width: 40%;
+    text-align: left;
+    word-break: break-word;
+  }
+  .cupom-col-qtd {
+    width: 12%;
+    text-align: center;
+  }
+  .cupom-col-unitario {
+    width: 18%;
+    text-align: right;
+    padding-right: 2px;
+  }
+  .cupom-col-total {
+    width: 18%;
+    text-align: right;
+    font-weight: bold;
+  }
+
+  .cupom-divider-tabela {
+    border-top: 1px solid #000;
+    margin: 2px 0;
+  }
+
+  /* ── Linhas de total ── */
+  .cupom-total-linha {
     display: flex;
     justify-content: space-between;
-    font-size: 16px;
+    font-size: 11px;
+    padding: 2px 0;
+    margin: 2px 0;
+  }
+  .cupom-total-linha.cupom-destaque {
+    font-size: 13px;
     font-weight: bold;
-    padding: 4px 0;
+    padding: 3px 0;
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
+  }
+  .cupom-label {
+    text-align: left;
+  }
+  .cupom-valor {
+    text-align: right;
+    font-weight: bold;
   }
 }
