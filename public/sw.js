@@ -1,32 +1,22 @@
-// ── Feira PDV — Service Worker ──────────────────────────────────────────
-const CACHE = 'feira-pdv-v1'
+// ── Feira PDV — Service Worker v4 ───────────────────────────────────────
+const CACHE = 'feira-pdv-v4'
 
-// Páginas e assets que ficam disponíveis offline
+// Só assets estáticos são pré-cacheados — NUNCA páginas HTML (causam loop)
 const PRE_CACHE = [
-  '/',
-  '/mesas',
-  '/cardapio',
-  '/estoque',
-  '/relatorios',
-  '/login',
   '/icon-192.png',
   '/icon-512.png',
   '/manifest.json',
 ]
 
-// ── Instalação: pré-cacheia o shell da aplicação ──────────────────────
+// ── Instalação ────────────────────────────────────────────────────────
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE).then(cache => {
-      return cache.addAll(PRE_CACHE).catch(() => {
-        // Ignora falhas individuais — offline funciona para o que foi cacheado
-      })
-    })
+    caches.open(CACHE).then(cache => cache.addAll(PRE_CACHE).catch(() => {}))
   )
   self.skipWaiting()
 })
 
-// ── Ativação: limpa caches antigas ───────────────────────────────────
+// ── Ativação: apaga todos os caches antigos ───────────────────────────
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -36,40 +26,51 @@ self.addEventListener('activate', event => {
   self.clients.claim()
 })
 
-// ── Fetch: estratégia por tipo de requisição ──────────────────────────
+// ── Fetch ─────────────────────────────────────────────────────────────
 self.addEventListener('fetch', event => {
   const { request } = event
   if (request.method !== 'GET') return
 
   const url = new URL(request.url)
 
-  // Rotas de API: Network First → cache como fallback offline
+  // Ignora requests de outros domínios (extensões, etc.)
+  if (url.origin !== self.location.origin) return
+
+  // ── Rotas de API: Network Only (nunca cachear) ──────────────────────
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          if (response.ok) {
-            const clone = response.clone()
-            caches.open(CACHE).then(c => c.put(request, clone))
-          }
-          return response
-        })
-        .catch(() => caches.match(request))
-    )
+    event.respondWith(fetch(request).catch(() => new Response('{"error":"offline"}', {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    })))
     return
   }
 
-  // Assets estáticos e páginas: Cache First → rede como fallback
+  // ── Páginas HTML: Network First (NUNCA cachear) ─────────────────────
+  // Páginas têm auth dinâmica — cachear causa redirect loop
+  const isPage = !url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|webmanifest|json)$/)
+  if (isPage) {
+    event.respondWith(fetch(request).catch(() =>
+      caches.match('/icon-192.png').then(() =>
+        new Response('<h1>Offline</h1><p>Sem conexão. Reconecte e recarregue.</p>', {
+          status: 503,
+          headers: { 'Content-Type': 'text/html' },
+        })
+      )
+    ))
+    return
+  }
+
+  // ── Assets estáticos (JS, CSS, imagens): Cache First ─────────────────
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached
       return fetch(request).then(response => {
-        if (response.ok) {
+        if (response.ok && response.type !== 'opaque') {
           const clone = response.clone()
           caches.open(CACHE).then(c => c.put(request, clone))
         }
         return response
-      }).catch(() => caches.match('/mesas') ?? new Response('Offline', { status: 503 }))
+      })
     })
   )
 })
