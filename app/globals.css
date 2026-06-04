@@ -226,10 +226,22 @@ button {
   }
   .kot-print * { visibility: visible !important; }
   .kot-header { text-align: center; margin-bottom: 8px; line-height: 1.5; }
-  .kot-header strong { font-size: 16px; }
+  /* Título usa Arial para Z inconfundível com S */
+  .kot-header strong {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 17px;
+    font-weight: 900;
+    letter-spacing: 2px;
+  }
   /* MESA XX — destaque grande */
-  .kot-mesa { font-size: 22px; font-weight: bold; letter-spacing: 1px; margin: 2px 0 0; }
-  /* Data/hora menor, na mesma linha que a mesa (gerenciado no HTML) */
+  .kot-mesa {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin: 2px 0 0;
+  }
+  /* Data/hora menor */
   .kot-hora  { font-size: 13px; color: #333; margin: 0 0 4px; }
   .kot-item { display: flex; gap: 8px; margin: 6px 0; font-size: 15px; flex-wrap: wrap; }
   .kot-qty  { font-weight: bold; min-width: 28px; }
