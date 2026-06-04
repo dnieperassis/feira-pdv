@@ -180,7 +180,7 @@ export default function CaixaPage() {
           <span className="cupom-label">TOTAL</span>
           <span className="cupom-valor">R$ {brl(total)}</span>
         </div>
-        <div className="cupom-total-linha">
+        <div className="cupom-total-linha cupom-por-pessoa">
           <span className="cupom-label">Por Pessoa (÷2)</span>
           <span className="cupom-valor">R$ {brl(valorPorPessoa)}</span>
         </div>

@@ -241,8 +241,11 @@ export default function PedidosPage() {
           <>
             <div className="kot-header">
               <strong>⚡ COMANDA DE COZINHA</strong>
-              <p>{comanda?.tipo === 'balcao' ? 'BALCÃO' : `MESA ${comanda?.mesa_numero}`} — #{id}</p>
-              <p>{kotData.enviado_em}</p>
+              <p className="kot-mesa">
+                {comanda?.tipo === 'balcao' ? 'BALCÃO' : `MESA ${String(comanda?.mesa_numero).padStart(2, '0')}`}
+                {' '}—{' '}#{id}
+              </p>
+              <p className="kot-hora">{kotData.enviado_em}</p>
             </div>
             <hr />
             {kotData.itens.map((item, i) => (

@@ -177,7 +177,7 @@ button {
   .cp-footer {
     flex: 1;
     text-align: left;
-    padding: 4mm 6mm 8mm 14mm;
+    padding: 2mm 6mm 16mm 14mm;
   }
   .cp-footer-linha { color: #7c1d00; font-size: 9pt; opacity: 0.75; margin-bottom: 2mm; }
   .cp-footer-txt   { font-size: 12pt; color: #1c0500; font-style: italic; font-weight: 600; margin: 0 0 2mm; }
@@ -225,8 +225,12 @@ button {
     background: #fff;
   }
   .kot-print * { visibility: visible !important; }
-  .kot-header { text-align: center; margin-bottom: 8px; line-height: 1.6; }
-  .kot-header strong { font-size: 18px; }
+  .kot-header { text-align: center; margin-bottom: 8px; line-height: 1.5; }
+  .kot-header strong { font-size: 16px; }
+  /* MESA XX — destaque grande */
+  .kot-mesa { font-size: 22px; font-weight: bold; letter-spacing: 1px; margin: 2px 0 0; }
+  /* Data/hora menor, na mesma linha que a mesa (gerenciado no HTML) */
+  .kot-hora  { font-size: 13px; color: #333; margin: 0 0 4px; }
   .kot-item { display: flex; gap: 8px; margin: 6px 0; font-size: 15px; flex-wrap: wrap; }
   .kot-qty  { font-weight: bold; min-width: 28px; }
   .kot-nome { font-weight: bold; flex: 1; }
@@ -249,11 +253,11 @@ button {
   .cupom-center  { text-align: center; line-height: 1.8; }
   .cupom-divider { border-top: 1px dashed #000; margin: 6px 0; }
 
-  /* ── Tabela Fiscal (5 colunas) ── */
+  /* ── Tabela Fiscal (5 colunas) — sem linhas internas ── */
   .cupom-tabela-fiscal {
     width: 100%;
     border-collapse: collapse;
-    font-size: 11px;
+    font-size: 10px;
     font-family: 'Courier New', monospace;
   }
   .cupom-tabela-fiscal thead {
@@ -266,53 +270,31 @@ button {
     font-size: 9px;
     text-transform: uppercase;
   }
-  .cupom-tabela-fiscal tbody tr {
-    border-bottom: 1px dotted #000;
-  }
+  /* Sem linhas entre as linhas da tabela */
+  .cupom-tabela-fiscal tbody tr { border: none; }
   .cupom-tabela-fiscal td {
     padding: 1px 0.5px;
     vertical-align: top;
     font-family: 'Courier New', monospace;
+    border: none;
   }
 
-  /* Colunas da tabela fiscal */
-  .cupom-col-item {
-    width: 8%;
-    text-align: center;
-    border-right: 1px solid #000;
-  }
-  .cupom-col-desc {
-    width: 40%;
-    text-align: left;
-    padding-left: 1px;
-    border-right: 1px solid #000;
-    word-break: break-word;
-  }
-  .cupom-col-qtd {
-    width: 10%;
-    text-align: center;
-    border-right: 1px solid #000;
-  }
-  .cupom-col-unitario {
-    width: 20%;
-    text-align: right;
-    padding-right: 1px;
-    border-right: 1px solid #000;
-  }
-  .cupom-col-total {
-    width: 20%;
-    text-align: right;
-    padding-right: 1px;
-  }
+  /* Colunas — sem bordas verticais internas */
+  .cupom-col-item     { width: 8%;  text-align: center; }
+  .cupom-col-desc     { width: 42%; text-align: left; padding-left: 1px; word-break: break-word; }
+  .cupom-col-qtd      { width: 10%; text-align: center; }
+  .cupom-col-unitario { width: 20%; text-align: right; padding-right: 1px; }
+  .cupom-col-total    { width: 20%; text-align: right; padding-right: 1px; }
 
   /* ── Linhas de total ── */
   .cupom-total-linha {
     display: flex;
     justify-content: space-between;
-    font-size: 11px;
-    padding: 2px 0;
-    margin: 2px 0;
+    font-size: 10px;
+    padding: 1px 0;
+    margin: 1px 0;
   }
+  /* TOTAL — destaque maior */
   .cupom-total-linha.cupom-destaque {
     font-size: 13px;
     font-weight: bold;
@@ -320,11 +302,12 @@ button {
     border-top: 1px solid #000;
     border-bottom: 1px solid #000;
   }
-  .cupom-label {
-    text-align: left;
+  /* Por Pessoa — menor e mais discreto */
+  .cupom-total-linha.cupom-por-pessoa {
+    font-size: 9px;
+    color: #555;
+    padding: 1px 0;
   }
-  .cupom-valor {
-    text-align: right;
-    font-weight: bold;
-  }
+  .cupom-label { text-align: left; }
+  .cupom-valor { text-align: right; font-weight: bold; }
 }
