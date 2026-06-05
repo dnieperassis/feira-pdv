@@ -85,26 +85,36 @@ export class Escpos {
     return Buffer.from(this.buf)
   }
 
-  // ── Mapeamento CP860 (português) ──────────────────────────────────────────
+  // ── Normalização: remove acentos → ASCII puro ────────────────────────────
+  // Mais confiável que code pages — funciona em qualquer impressora
   private latinCode(code: number): number {
-    // Mantém ASCII padrão (0-127)
     if (code < 128) return code
 
-    // Caracteres especiais do português → CP860
+    // Mapeia caracteres acentuados → equivalente ASCII sem acento
     const map: Record<number, number> = {
-      0xe1: 0xa0, // á
-      0xe0: 0x85, // à
-      0xe2: 0x83, // â
-      0xe3: 0xc6, // ã
-      0xe9: 0x82, // é
-      0xea: 0x88, // ê
-      0xed: 0xa1, // í
-      0xf3: 0xa2, // ó
-      0xf4: 0x99, // ô
-      0xf5: 0xe4, // õ
-      0xfa: 0xa3, // ú
-      0xfc: 0x81, // ü
-      0xe7: 0x87, // ç
+      // minúsculas
+      0xe1: 0x61, // á → a
+      0xe0: 0x61, // à → a
+      0xe2: 0x61, // â → a
+      0xe3: 0x61, // ã → a
+      0xe4: 0x61, // ä → a
+      0xe9: 0x65, // é → e
+      0xea: 0x65, // ê → e
+      0xeb: 0x65, // ë → e
+      0xed: 0x69, // í → i
+      0xec: 0x69, // ì → i
+      0xee: 0x69, // î → i
+      0xf3: 0x6f, // ó → o
+      0xf4: 0x6f, // ô → o
+      0xf5: 0x6f, // õ → o
+      0xf2: 0x6f, // ò → o
+      0xfa: 0x75, // ú → u
+      0xfb: 0x75, // û → u
+      0xfc: 0x75, // ü → u
+      0xf9: 0x75, // ù → u
+      0xe7: 0x63, // ç → c
+      0xf1: 0x6e, // ñ → n
+      // maiúsculas
       0xc1: 0x41, // Á → A
       0xc0: 0x41, // À → A
       0xc2: 0x41, // Â → A
@@ -112,11 +122,13 @@ export class Escpos {
       0xc9: 0x45, // É → E
       0xca: 0x45, // Ê → E
       0xcd: 0x49, // Í → I
+      0xcc: 0x49, // Ì → I
       0xd3: 0x4f, // Ó → O
       0xd4: 0x4f, // Ô → O
       0xd5: 0x4f, // Õ → O
       0xda: 0x55, // Ú → U
-      0xc7: 0x80, // Ç
+      0xdb: 0x55, // Û → U
+      0xc7: 0x43, // Ç → C
     }
     return map[code] ?? 0x3f // '?' para outros
   }

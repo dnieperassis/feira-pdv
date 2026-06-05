@@ -190,8 +190,9 @@ function buildCupom(body: CupomBody, nome: string, cidade: string): Buffer {
   })
 
   esc.dashedLine(COLS).lf()
-    .bold(true).size(1, 2).row('TOTAL', brlEsc(total), COLS)
-    .size(1, 1).bold(false)
+    .bold(true).row('TOTAL', brlEsc(total), COLS)
+    .bold(false)
+    .dashedLine(COLS)
     .row('Por Pessoa (div.2)', brlEsc(total / 2), COLS)
     .lf().dashedLine(COLS)
     .center().textLn(`Pagamento: ${formas[forma] ?? forma}`)
