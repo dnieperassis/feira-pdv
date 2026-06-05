@@ -106,10 +106,11 @@ export default function CardapioPage() {
   async function excluir(p: Produto) {
     if (!confirm(`Excluir "${p.nome}"?`)) return
     const res = await fetch(`/api/produtos/${p.id}`, { method: 'DELETE' })
+    const d = await res.json()
     if (!res.ok) {
-      const d = await res.json()
       alert(d.error)
     } else {
+      if (d.aviso) alert(`⚠️ ${d.aviso}`)
       carregar()
     }
   }

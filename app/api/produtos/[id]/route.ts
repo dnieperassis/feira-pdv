@@ -41,16 +41,34 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const { id } = await params
   const db = getDb()
 
-  const emUso = db.prepare(`
+  // Verifica se está em comanda ABERTA (bloqueio operacional)
+  const emUsoAberta = db.prepare(`
     SELECT COUNT(*) as c FROM comanda_itens ci
     JOIN comandas co ON co.id = ci.comanda_id
     WHERE ci.produto_id = ? AND co.status = 'aberta'
   `).get(id) as { c: number }
 
-  if (emUso.c > 0) {
+  if (emUsoAberta.c > 0) {
     return NextResponse.json({ error: 'Produto está em uso em comanda aberta' }, { status: 409 })
   }
 
-  db.prepare('DELETE FROM produtos WHERE id = ?').run(id)
-  return new NextResponse(null, { status: 204 })
+  // Produto pode ter histórico em comandas fechadas (FK constraint)
+  // Solução: marcar como indisponível em vez de excluir se tiver histórico
+  const emUsoHistorico = db.prepare(
+    'SELECT COUNT(*) as c FROM comanda_itens WHERE produto_id = ?'
+  ).get(id) as { c: number }
+
+  if (emUsoHistorico.c > 0) {
+    // Tem histórico — desativa em vez de excluir (preserva relatórios)
+    db.prepare('UPDATE produtos SET disponivel = 0 WHERE id = ?').run(id)
+    return NextResponse.json({ ok: true, aviso: 'Produto desativado pois possui histórico de vendas. Para excluir definitivamente, limpe o histórico primeiro.' })
+  }
+
+  try {
+    db.prepare('DELETE FROM produtos WHERE id = ?').run(id)
+    return NextResponse.json({ ok: true })
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro ao excluir'
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
 }
