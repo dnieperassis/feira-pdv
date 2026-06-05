@@ -1,20 +1,29 @@
-// ── Impressão via Windows Print Spooler (USB/local) ─────────────────────────
+// ── Impressão RAW via Win32 API (winspool.drv) ───────────────────────────────
+// Único método correto para enviar bytes ESC/POS a impressora térmica Windows
+// sem renderização GDI (que ignoraria os comandos da impressora)
+
 import { execSync } from 'child_process'
 import { writeFileSync, unlinkSync, existsSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
 /**
- * Lista impressoras instaladas via wmic
+ * Lista impressoras via wmic (compatível W7/10/11)
  */
 export function listarImpressoras(): string[] {
   const metodos = [
     () => {
       const out = execSync('wmic printer get name /format:list', { encoding: 'utf8', timeout: 8000 })
-      return out.split('\n').filter(l => l.trim().startsWith('Name=')).map(l => l.replace('Name=', '').trim()).filter(Boolean)
+      return out.split('\n')
+        .filter(l => l.trim().startsWith('Name='))
+        .map(l => l.replace('Name=', '').trim())
+        .filter(Boolean)
     },
     () => {
-      const out = execSync('powershell -NoProfile -Command "Get-Printer | Select-Object -ExpandProperty Name"', { encoding: 'utf8', timeout: 8000 })
+      const out = execSync(
+        'powershell -NoProfile -Command "Get-Printer | Select-Object -ExpandProperty Name"',
+        { encoding: 'utf8', timeout: 8000 }
+      )
       return out.split('\n').map(s => s.trim()).filter(Boolean)
     },
   ]
@@ -24,22 +33,68 @@ export function listarImpressoras(): string[] {
   return []
 }
 
-/**
- * Descobre a porta USB/COM da impressora via wmic
- */
-function getPorta(printerName: string): string {
-  try {
-    const escaped = printerName.replace(/"/g, '\\"')
-    const out = execSync(`wmic printer where "name='${escaped}'" get PortName /format:list`, { encoding: 'utf8', timeout: 5000 })
-    const match = out.match(/PortName=(.+)/)
-    if (match) return match[1].trim()
-  } catch { /* ignora */ }
-  return ''
+// ── Script PowerShell com Win32 RAW printing ─────────────────────────────────
+// Usa winspool.drv diretamente via P/Invoke para enviar bytes como datatype=RAW
+// Isso é o mesmo que aplicações profissionais de PDV usam no Windows
+
+const PS_RAW_PRINT_CODE = String.raw`
+using System;
+using System.Runtime.InteropServices;
+
+public class Win32RawPrint {
+    [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Auto)]
+    public struct DOCINFO {
+        [MarshalAs(UnmanagedType.LPTStr)] public string pDocName;
+        [MarshalAs(UnmanagedType.LPTStr)] public string pOutputFile;
+        [MarshalAs(UnmanagedType.LPTStr)] public string pDataType;
+    }
+
+    [DllImport("winspool.drv", CharSet=CharSet.Auto, SetLastError=true)]
+    public static extern bool OpenPrinter(string pPrinterName, out IntPtr phPrinter, IntPtr pDefault);
+
+    [DllImport("winspool.drv", CharSet=CharSet.Auto, SetLastError=true)]
+    public static extern bool StartDocPrinter(IntPtr hPrinter, Int32 level, ref DOCINFO pDocInfo);
+
+    [DllImport("winspool.drv", SetLastError=true)]
+    public static extern bool StartPagePrinter(IntPtr hPrinter);
+
+    [DllImport("winspool.drv", SetLastError=true)]
+    public static extern bool WritePrinter(IntPtr hPrinter, byte[] pBytes, Int32 dwCount, out Int32 dwWritten);
+
+    [DllImport("winspool.drv", SetLastError=true)]
+    public static extern bool EndPagePrinter(IntPtr hPrinter);
+
+    [DllImport("winspool.drv", SetLastError=true)]
+    public static extern bool EndDocPrinter(IntPtr hPrinter);
+
+    [DllImport("winspool.drv", SetLastError=true)]
+    public static extern bool ClosePrinter(IntPtr hPrinter);
+
+    public static bool SendRaw(string printerName, byte[] bytes) {
+        IntPtr hPrinter = IntPtr.Zero;
+        if (!OpenPrinter(printerName, out hPrinter, IntPtr.Zero)) {
+            throw new Exception("OpenPrinter falhou: " + Marshal.GetLastWin32Error());
+        }
+        try {
+            var di = new DOCINFO { pDocName = "FeiraPDV", pDataType = "RAW" };
+            if (!StartDocPrinter(hPrinter, 1, ref di))
+                throw new Exception("StartDocPrinter falhou: " + Marshal.GetLastWin32Error());
+            StartPagePrinter(hPrinter);
+            Int32 written = 0;
+            WritePrinter(hPrinter, bytes, bytes.Length, out written);
+            EndPagePrinter(hPrinter);
+            EndDocPrinter(hPrinter);
+            return written == bytes.Length;
+        } finally {
+            ClosePrinter(hPrinter);
+        }
+    }
 }
+`
 
 /**
- * Imprime bytes ESC/POS na impressora Windows.
- * Escreve script .ps1 para evitar problemas de escaping em linha de comando.
+ * Envia bytes ESC/POS para impressora Windows via Win32 RAW (winspool.drv).
+ * Escreve script .ps1 temporário para evitar problemas de escaping.
  */
 export async function printWindows(printerName: string, data: Buffer): Promise<void> {
   if (!printerName) throw new Error('Nome da impressora não configurado')
@@ -48,58 +103,37 @@ export async function printWindows(printerName: string, data: Buffer): Promise<v
   const prnFile = join(tmpdir(), `fpdv_${ts}.prn`)
   const ps1File = join(tmpdir(), `fpdv_${ts}.ps1`)
 
-  // Sempre usa barras normais no PS1 (PowerShell aceita)
-  const prnForPS = prnFile.replace(/\\/g, '/')
+  // PowerShell usa / sem problemas
+  const prnPS = prnFile.replace(/\\/g, '/')
+  // Escapa aspas simples para PowerShell
+  const printerPS = printerName.replace(/'/g, "''")
 
   const psScript = `
 $ErrorActionPreference = 'Stop'
-Add-Type -AssemblyName System.Printing
-try {
-  $server = New-Object System.Printing.LocalPrintServer
-  $q      = $server.GetPrintQueue('${printerName.replace(/'/g, "''")}')
-  $job    = $q.AddJob('FeiraPDV')
-  $stream = $job.JobStream
-  $bytes  = [System.IO.File]::ReadAllBytes('${prnForPS}')
-  $stream.Write($bytes, 0, $bytes.Length)
-  $stream.Close()
-  exit 0
-} catch {
-  Write-Error $_
-  exit 1
+Add-Type -Language CSharp -TypeDefinition @'
+${PS_RAW_PRINT_CODE}
+'@
+
+$bytes  = [System.IO.File]::ReadAllBytes('${prnPS}')
+$result = [Win32RawPrint]::SendRaw('${printerPS}', $bytes)
+if (-not $result) {
+    throw "SendRaw retornou false — impressora pode estar offline ou ocupada"
 }
+Write-Host "OK: $($bytes.Length) bytes enviados"
+exit 0
 `.trim()
 
   try {
     writeFileSync(prnFile, data)
     writeFileSync(ps1File, psScript, 'utf8')
 
-    // Método 1: System.Printing via arquivo .ps1
-    try {
-      execSync(
-        `powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${ps1File}"`,
-        { encoding: 'utf8', timeout: 15000 }
-      )
-      return
-    } catch (e1) {
-      console.warn('[print] System.Printing falhou, tentando porta USB:', e1 instanceof Error ? e1.message : e1)
-    }
-
-    // Método 2: copy /b direto na porta USB (ex: USB002)
-    const porta = getPorta(printerName)
-    if (porta && (porta.startsWith('USB') || porta.startsWith('COM'))) {
-      try {
-        // Sintaxe correta: sem aspas no device path \\.\USB002
-        execSync(`cmd /c copy /b "${prnFile}" \\\\.\\${porta}`, { encoding: 'utf8', timeout: 10000 })
-        return
-      } catch (e2) {
-        console.warn('[print] copy /b USB falhou:', e2 instanceof Error ? e2.message : e2)
-      }
-    }
-
-    throw new Error(`Não foi possível imprimir em "${printerName}". Verifique se o nome está correto e a impressora está online.`)
+    execSync(
+      `powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${ps1File}"`,
+      { encoding: 'utf8', timeout: 20000 }
+    )
 
   } finally {
-    if (existsSync(prnFile)) try { unlinkSync(prnFile) } catch { /* ignora */ }
-    if (existsSync(ps1File)) try { unlinkSync(ps1File) } catch { /* ignora */ }
+    if (existsSync(prnFile)) try { unlinkSync(prnFile) } catch { /* ok */ }
+    if (existsSync(ps1File)) try { unlinkSync(ps1File) } catch { /* ok */ }
   }
 }
