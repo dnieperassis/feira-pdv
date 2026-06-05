@@ -290,10 +290,6 @@ export default function ConfiguracoesPage() {
         {/* ── Modo Windows (USB) ── */}
         {config.impressora_modo === 'windows' && (
           <div className="flex flex-col gap-3">
-            <div className="bg-amber-950/30 border border-amber-700 rounded-xl p-3 text-xs text-amber-200">
-              <p className="font-semibold mb-1">📋 Pré-requisito: Instale o driver da impressora</p>
-              <p>Execute o arquivo <span className="font-mono bg-slate-800 px-1 rounded">POS80Setup_20190329.exe</span> e siga o assistente. Depois volte aqui.</p>
-            </div>
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-slate-400 text-xs">Impressora instalada no Windows</label>
@@ -326,7 +322,9 @@ export default function ConfiguracoesPage() {
                 />
               )}
               <p className="text-slate-500 text-xs mt-1">
-                Clique em &quot;Buscar impressoras&quot; para ver as disponíveis, ou digite o nome exato do Windows (Painel de Controle → Impressoras).
+                Clique em &quot;Buscar impressoras&quot; ou digite o nome exato que aparece no Windows
+                (ex: <span className="text-amber-400 font-mono">POS80 Printer</span>).
+                Para ver o nome: Painel de Controle → Dispositivos e Impressoras.
               </p>
             </div>
             <div className="flex items-center gap-3">
