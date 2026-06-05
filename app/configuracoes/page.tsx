@@ -13,6 +13,7 @@ interface Config {
   impressora_modo:      string
   impressora_ip:        string
   impressora_porta:     string
+  impressora_nome:      string
 }
 
 interface Operador { id: number; nome: string; codigo: string; perfil: string; ativo: number }
@@ -30,12 +31,15 @@ export default function ConfiguracoesPage() {
     impressora_modo:      'browser',
     impressora_ip:        '',
     impressora_porta:     '9100',
+    impressora_nome:      '',
   })
   const [salvando, setSalvando] = useState(false)
   const [salvo, setSalvo]       = useState(false)
   const [aviso, setAviso]       = useState('')
   const [testandoImpressora, setTestandoImpressora] = useState(false)
   const [statusImpressora, setStatusImpressora]     = useState<'idle'|'ok'|'erro'>('idle')
+  const [impressorasWin, setImpressorasWin]         = useState<string[]>([])
+  const [carregandoImp, setCarregandoImp]           = useState(false)
 
   // Operadores
   const [operadores, setOperadores]     = useState<Operador[]>([])
@@ -80,6 +84,16 @@ export default function ConfiguracoesPage() {
     setTimeout(() => setSalvo(false), 2500)
   }
 
+  async function buscarImpressorasWin() {
+    setCarregandoImp(true)
+    try {
+      const r = await fetch('/api/print?listar=1')
+      const d = await r.json()
+      setImpressorasWin(d.lista ?? [])
+    } catch { setImpressorasWin([]) }
+    finally { setCarregandoImp(false) }
+  }
+
   async function testarImpressora() {
     setTestandoImpressora(true)
     setStatusImpressora('idle')
@@ -95,7 +109,7 @@ export default function ConfiguracoesPage() {
       setStatusImpressora('erro')
     } finally {
       setTestandoImpressora(false)
-      setTimeout(() => setStatusImpressora('idle'), 5000)
+      setTimeout(() => setStatusImpressora('idle'), 6000)
     }
   }
 
@@ -250,17 +264,18 @@ export default function ConfiguracoesPage() {
       <section className="bg-slate-900 border border-slate-700 rounded-2xl p-6 flex flex-col gap-4">
         <h2 className="text-slate-300 font-semibold text-sm uppercase tracking-wide">🖨️ Impressora Térmica</h2>
 
-        {/* Modo */}
-        <div className="flex gap-3">
+        {/* Seleção de modo */}
+        <div className="grid grid-cols-3 gap-2">
           {[
-            { id: 'browser', label: '🖥️ Navegador', desc: 'Ctrl+P / diálogo do sistema' },
-            { id: 'tcp',     label: '🌐 TCP/IP',    desc: 'Impressora em rede (80mm)' },
+            { id: 'windows', label: '🪟 USB Windows', desc: 'Impressora USB instalada no PC (recomendado)' },
+            { id: 'tcp',     label: '🌐 TCP/IP',      desc: 'Impressora com Ethernet/WiFi próprio' },
+            { id: 'browser', label: '🖥️ Navegador',   desc: 'Ctrl+P — sem impressora física' },
           ].map(m => (
             <button
               key={m.id}
               onClick={() => setConfig(c => ({ ...c, impressora_modo: m.id }))}
               className={[
-                'flex-1 p-3 rounded-xl border-2 text-left transition-all',
+                'p-3 rounded-xl border-2 text-left transition-all',
                 config.impressora_modo === m.id
                   ? 'border-amber-500 bg-amber-500/10'
                   : 'border-slate-600 bg-slate-800 hover:border-slate-400',
@@ -272,9 +287,65 @@ export default function ConfiguracoesPage() {
           ))}
         </div>
 
-        {/* Configurações TCP */}
+        {/* ── Modo Windows (USB) ── */}
+        {config.impressora_modo === 'windows' && (
+          <div className="flex flex-col gap-3">
+            <div className="bg-amber-950/30 border border-amber-700 rounded-xl p-3 text-xs text-amber-200">
+              <p className="font-semibold mb-1">📋 Pré-requisito: Instale o driver da impressora</p>
+              <p>Execute o arquivo <span className="font-mono bg-slate-800 px-1 rounded">POS80Setup_20190329.exe</span> e siga o assistente. Depois volte aqui.</p>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-slate-400 text-xs">Impressora instalada no Windows</label>
+                <button
+                  onClick={buscarImpressorasWin}
+                  disabled={carregandoImp}
+                  className="text-amber-400 text-xs hover:text-amber-300 disabled:opacity-50"
+                >
+                  {carregandoImp ? '⏳ Buscando...' : '🔄 Buscar impressoras'}
+                </button>
+              </div>
+              {impressorasWin.length > 0 ? (
+                <select
+                  value={config.impressora_nome}
+                  onChange={e => setConfig(c => ({ ...c, impressora_nome: e.target.value }))}
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500"
+                >
+                  <option value="">— Selecione a impressora —</option>
+                  {impressorasWin.map(imp => (
+                    <option key={imp} value={imp}>{imp}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={config.impressora_nome}
+                  onChange={e => setConfig(c => ({ ...c, impressora_nome: e.target.value }))}
+                  placeholder="Ex: POS-80 ou POS Printer"
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500"
+                />
+              )}
+              <p className="text-slate-500 text-xs mt-1">
+                Clique em &quot;Buscar impressoras&quot; para ver as disponíveis, ou digite o nome exato do Windows (Painel de Controle → Impressoras).
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="secondary" size="sm"
+                onClick={testarImpressora}
+                disabled={testandoImpressora || !config.impressora_nome}
+              >
+                {testandoImpressora ? '⏳ Imprimindo teste...' : '🖨️ Imprimir Página de Teste'}
+              </Button>
+              {statusImpressora === 'ok'   && <span className="text-green-400 text-sm">✅ Impresso com sucesso!</span>}
+              {statusImpressora === 'erro' && <span className="text-red-400 text-sm">❌ Falha — verifique o nome</span>}
+            </div>
+          </div>
+        )}
+
+        {/* ── Modo TCP/IP ── */}
         {config.impressora_modo === 'tcp' && (
-          <div className="flex flex-col gap-3 pt-1">
+          <div className="flex flex-col gap-3">
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2">
                 <label className="text-slate-400 text-xs block mb-1">IP da Impressora</label>
@@ -298,33 +369,19 @@ export default function ConfiguracoesPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={testarImpressora}
-                disabled={testandoImpressora || !config.impressora_ip}
-              >
+              <Button variant="secondary" size="sm" onClick={testarImpressora}
+                disabled={testandoImpressora || !config.impressora_ip}>
                 {testandoImpressora ? '⏳ Testando...' : '🖨️ Testar Impressão'}
               </Button>
-              {statusImpressora === 'ok'   && <span className="text-green-400 text-sm font-semibold">✅ Impressora OK!</span>}
-              {statusImpressora === 'erro' && <span className="text-red-400 text-sm font-semibold">❌ Falha — verifique IP e conexão</span>}
-            </div>
-            <div className="bg-slate-800 rounded-xl p-3 text-xs text-slate-400">
-              <p className="font-semibold text-slate-300 mb-1">Como configurar a impressora em rede:</p>
-              <ol className="list-decimal pl-4 space-y-0.5">
-                <li>Conecte a impressora USB ao PC</li>
-                <li>Instale como impressora Windows normalmente</li>
-                <li>Use o <span className="text-amber-400">IP do PC</span> (ex: 192.168.1.100) e porta <span className="text-amber-400">9100</span></li>
-                <li>OU use impressora com porta de rede própria (Ethernet/WiFi)</li>
-                <li>Clique em &quot;Testar Impressão&quot; para verificar</li>
-              </ol>
+              {statusImpressora === 'ok'   && <span className="text-green-400 text-sm">✅ Impressora OK!</span>}
+              {statusImpressora === 'erro' && <span className="text-red-400 text-sm">❌ Falha — verifique IP</span>}
             </div>
           </div>
         )}
 
         {config.impressora_modo === 'browser' && (
           <p className="text-slate-500 text-sm">
-            A impressão será feita pelo navegador (Ctrl+P). Para impressão automática na impressora USB, configure o modo TCP/IP.
+            Impressão via Ctrl+P do navegador. Selecione &quot;USB Windows&quot; para usar a impressora física.
           </p>
         )}
       </section>

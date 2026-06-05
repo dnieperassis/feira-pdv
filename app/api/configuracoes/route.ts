@@ -9,9 +9,10 @@ const DEFAULTS: Record<string, string> = {
   chave_pix:            '',
   numero_mesas:         '10',
   telefone:             '',
-  impressora_modo:      'browser', // browser | tcp
+  impressora_modo:      'browser', // browser | tcp | windows
   impressora_ip:        '',
   impressora_porta:     '9100',
+  impressora_nome:      '', // nome da impressora Windows (modo windows)
 }
 
 export async function GET() {
