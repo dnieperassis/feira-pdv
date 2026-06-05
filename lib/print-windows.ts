@@ -108,24 +108,27 @@ export async function printWindows(printerName: string, data: Buffer): Promise<v
   // Escapa aspas simples para PowerShell
   const printerPS = printerName.replace(/'/g, "''")
 
-  const psScript = `
-$ErrorActionPreference = 'Stop'
-Add-Type -Language CSharp -TypeDefinition @'
-${PS_RAW_PRINT_CODE}
-'@
-
-$bytes  = [System.IO.File]::ReadAllBytes('${prnPS}')
-$result = [Win32RawPrint]::SendRaw('${printerPS}', $bytes)
-if (-not $result) {
-    throw "SendRaw retornou false — impressora pode estar offline ou ocupada"
-}
-Write-Host "OK: $($bytes.Length) bytes enviados"
-exit 0
-`.trim()
+  // IMPORTANTE: usar apenas ASCII no script PS1 para evitar corrupcao de encoding
+  const psScript = [
+    '$ErrorActionPreference = \'Stop\'',
+    'Add-Type -Language CSharp -TypeDefinition @\'',
+    PS_RAW_PRINT_CODE,
+    '\'@',
+    '',
+    `$bytes  = [System.IO.File]::ReadAllBytes('${prnPS}')`,
+    `$result = [Win32RawPrint]::SendRaw('${printerPS}', $bytes)`,
+    'if (-not $result) {',
+    '    throw "SendRaw retornou false - impressora offline ou ocupada"',
+    '}',
+    'Write-Host "OK bytes enviados"',
+    'exit 0',
+  ].join('\r\n')
 
   try {
     writeFileSync(prnFile, data)
-    writeFileSync(ps1File, psScript, 'utf8')
+    // BOM UTF-8 (0xEF 0xBB 0xBF) faz PowerShell ler corretamente em qualquer locale
+    const bom = Buffer.from([0xEF, 0xBB, 0xBF])
+    writeFileSync(ps1File, Buffer.concat([bom, Buffer.from(psScript, 'utf8')]))
 
     execSync(
       `powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${ps1File}"`,
