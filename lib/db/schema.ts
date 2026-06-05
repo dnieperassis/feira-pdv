@@ -128,6 +128,10 @@ function seedAdm(db: Database.Database) {
 }
 
 function seedInicial(db: Database.Database) {
+  // Não re-semeia se o banco foi limpo manualmente (flag skip_seed)
+  const skipFlag = db.prepare("SELECT valor FROM configuracoes WHERE chave = 'skip_seed'").get() as { valor: string } | undefined
+  if (skipFlag?.valor === '1') return
+
   const jaSeeded = db.prepare('SELECT COUNT(*) as c FROM categorias').get() as { c: number }
   if (jaSeeded.c > 0) return
 
