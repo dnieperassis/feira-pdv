@@ -9,6 +9,9 @@ const DEFAULTS: Record<string, string> = {
   chave_pix:            '',
   numero_mesas:         '10',
   telefone:             '',
+  impressora_modo:      'browser', // browser | tcp
+  impressora_ip:        '',
+  impressora_porta:     '9100',
 }
 
 export async function GET() {
@@ -36,7 +39,7 @@ export async function PATCH(req: NextRequest) {
 
   db.transaction(() => {
     for (const [chave, valor] of Object.entries(body)) {
-      if (chave in DEFAULTS && chave !== 'numero_mesas') upsert.run(chave, valor)
+      if (chave in DEFAULTS && chave !== 'numero_mesas') upsert.run(chave, String(valor))
     }
   })()
 

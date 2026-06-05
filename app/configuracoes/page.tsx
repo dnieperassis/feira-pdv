@@ -10,6 +10,9 @@ interface Config {
   chave_pix:            string
   numero_mesas:         string
   telefone:             string
+  impressora_modo:      string
+  impressora_ip:        string
+  impressora_porta:     string
 }
 
 interface Operador { id: number; nome: string; codigo: string; perfil: string; ativo: number }
@@ -24,10 +27,15 @@ export default function ConfiguracoesPage() {
     chave_pix:            '',
     numero_mesas:         '10',
     telefone:             '',
+    impressora_modo:      'browser',
+    impressora_ip:        '',
+    impressora_porta:     '9100',
   })
   const [salvando, setSalvando] = useState(false)
   const [salvo, setSalvo]       = useState(false)
   const [aviso, setAviso]       = useState('')
+  const [testandoImpressora, setTestandoImpressora] = useState(false)
+  const [statusImpressora, setStatusImpressora]     = useState<'idle'|'ok'|'erro'>('idle')
 
   // Operadores
   const [operadores, setOperadores]     = useState<Operador[]>([])
@@ -70,6 +78,25 @@ export default function ConfiguracoesPage() {
     setSalvo(true)
     setAviso('')
     setTimeout(() => setSalvo(false), 2500)
+  }
+
+  async function testarImpressora() {
+    setTestandoImpressora(true)
+    setStatusImpressora('idle')
+    try {
+      const r = await fetch('/api/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo: 'teste' }),
+      })
+      const data = await r.json()
+      setStatusImpressora(data.ok ? 'ok' : 'erro')
+    } catch {
+      setStatusImpressora('erro')
+    } finally {
+      setTestandoImpressora(false)
+      setTimeout(() => setStatusImpressora('idle'), 5000)
+    }
   }
 
   // Funções de operadores
@@ -218,6 +245,89 @@ export default function ConfiguracoesPage() {
       <Button size="lg" fullWidth onClick={salvar} disabled={salvando}>
         {salvo ? '✓ Salvo!' : salvando ? 'Salvando...' : 'Salvar Configurações'}
       </Button>
+
+      {/* Impressora Térmica */}
+      <section className="bg-slate-900 border border-slate-700 rounded-2xl p-6 flex flex-col gap-4">
+        <h2 className="text-slate-300 font-semibold text-sm uppercase tracking-wide">🖨️ Impressora Térmica</h2>
+
+        {/* Modo */}
+        <div className="flex gap-3">
+          {[
+            { id: 'browser', label: '🖥️ Navegador', desc: 'Ctrl+P / diálogo do sistema' },
+            { id: 'tcp',     label: '🌐 TCP/IP',    desc: 'Impressora em rede (80mm)' },
+          ].map(m => (
+            <button
+              key={m.id}
+              onClick={() => setConfig(c => ({ ...c, impressora_modo: m.id }))}
+              className={[
+                'flex-1 p-3 rounded-xl border-2 text-left transition-all',
+                config.impressora_modo === m.id
+                  ? 'border-amber-500 bg-amber-500/10'
+                  : 'border-slate-600 bg-slate-800 hover:border-slate-400',
+              ].join(' ')}
+            >
+              <p className="text-white font-semibold text-sm">{m.label}</p>
+              <p className="text-slate-400 text-xs mt-0.5">{m.desc}</p>
+            </button>
+          ))}
+        </div>
+
+        {/* Configurações TCP */}
+        {config.impressora_modo === 'tcp' && (
+          <div className="flex flex-col gap-3 pt-1">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-2">
+                <label className="text-slate-400 text-xs block mb-1">IP da Impressora</label>
+                <input
+                  type="text"
+                  value={config.impressora_ip}
+                  onChange={e => setConfig(c => ({ ...c, impressora_ip: e.target.value }))}
+                  placeholder="192.168.1.200"
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <div>
+                <label className="text-slate-400 text-xs block mb-1">Porta</label>
+                <input
+                  type="text"
+                  value={config.impressora_porta}
+                  onChange={e => setConfig(c => ({ ...c, impressora_porta: e.target.value }))}
+                  placeholder="9100"
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={testarImpressora}
+                disabled={testandoImpressora || !config.impressora_ip}
+              >
+                {testandoImpressora ? '⏳ Testando...' : '🖨️ Testar Impressão'}
+              </Button>
+              {statusImpressora === 'ok'   && <span className="text-green-400 text-sm font-semibold">✅ Impressora OK!</span>}
+              {statusImpressora === 'erro' && <span className="text-red-400 text-sm font-semibold">❌ Falha — verifique IP e conexão</span>}
+            </div>
+            <div className="bg-slate-800 rounded-xl p-3 text-xs text-slate-400">
+              <p className="font-semibold text-slate-300 mb-1">Como configurar a impressora em rede:</p>
+              <ol className="list-decimal pl-4 space-y-0.5">
+                <li>Conecte a impressora USB ao PC</li>
+                <li>Instale como impressora Windows normalmente</li>
+                <li>Use o <span className="text-amber-400">IP do PC</span> (ex: 192.168.1.100) e porta <span className="text-amber-400">9100</span></li>
+                <li>OU use impressora com porta de rede própria (Ethernet/WiFi)</li>
+                <li>Clique em &quot;Testar Impressão&quot; para verificar</li>
+              </ol>
+            </div>
+          </div>
+        )}
+
+        {config.impressora_modo === 'browser' && (
+          <p className="text-slate-500 text-sm">
+            A impressão será feita pelo navegador (Ctrl+P). Para impressão automática na impressora USB, configure o modo TCP/IP.
+          </p>
+        )}
+      </section>
 
       {/* Operadores */}
       <section className="bg-slate-900 border border-slate-700 rounded-2xl p-6 flex flex-col gap-4">

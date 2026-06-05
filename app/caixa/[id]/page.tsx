@@ -99,7 +99,25 @@ export default function CaixaPage() {
   const valorPorPessoa = total / 2
 
   async function imprimir() {
-    window.print()
+    if (!comanda || !config) return
+    const printRes = await fetch('/api/print', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tipo: 'cupom',
+        mesa: comanda.tipo === 'balcao' ? 'Balcao' : `Mesa ${comanda.mesa_numero}`,
+        comanda_id: Number(id),
+        data_hora: dataHora,
+        itens,
+        forma,
+        total,
+        troco,
+      }),
+    })
+    const printData = await printRes.json()
+    if (printData.modo === 'browser') {
+      window.print()
+    }
   }
 
   async function copiarPix() {

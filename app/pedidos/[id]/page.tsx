@@ -190,8 +190,24 @@ export default function PedidosPage() {
     const data: KotData = await res.json()
     setKotData(data)
     await carregarComanda()
-    // Pequeno delay para o KOT renderizar antes de imprimir
-    setTimeout(() => window.print(), 150)
+
+    // Tenta impressão via TCP; se não configurado, usa browser
+    const printRes = await fetch('/api/print', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tipo: 'kot',
+        mesa: comanda?.tipo === 'balcao' ? 'BALCAO' : `MESA ${String(comanda?.mesa_numero).padStart(2, '0')}`,
+        comanda_id: Number(id),
+        enviado_em: data.enviado_em,
+        itens: data.itens,
+      }),
+    })
+    const printData = await printRes.json()
+    if (printData.modo === 'browser') {
+      // Fallback: impressão pelo navegador
+      setTimeout(() => window.print(), 150)
+    }
   }
 
   async function abrirTrocaMesa() {
