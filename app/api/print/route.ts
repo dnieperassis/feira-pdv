@@ -173,19 +173,23 @@ function buildCupom(body: CupomBody, nome: string, cidade: string): Buffer {
     .center().textLn(data_hora).lf()
     .left().dashedLine(COLS)
     // Cabeçalho tabela
+    // Layout: IT(2) sp DESC(18) sp QT(2) sp V.UNT(10) sp V.TOT(10) = 45 < 48
     .bold(true)
-    .textLn(`${pad('IT', 3)} ${pad('DESCRICAO', 20)} ${pad('QT', 3)} ${pad('V.UNT', 8, 'right')} ${pad('V.TOT', 7, 'right')}`)
+    .textLn(`${pad('IT', 2)} ${pad('DESCRICAO', 18)} ${pad('QT', 2)} ${pad('V.UNT', 10, 'right')} ${pad('V.TOT', 10, 'right')}`)
     .bold(false)
     .dashedLine(COLS)
 
   agrupados.forEach((item, idx) => {
     const uni = item.total / item.quantidade
+    // brlEsc sempre retorna 2 casas decimais — nunca truncar precos
+    const uniStr  = brlEsc(uni)
+    const totStr  = brlEsc(item.total)
     esc.textLn(
-      `${pad(String(idx + 1).padStart(2, '0'), 3)} ` +
-      `${pad(item.produto_nome, 20)} ` +
-      `${pad(String(item.quantidade).padStart(2, '0'), 3)} ` +
-      `${pad(brlEsc(uni), 8, 'right')} ` +
-      `${pad(brlEsc(item.total), 7, 'right')}`
+      `${pad(String(idx + 1).padStart(2, '0'), 2)} ` +
+      `${pad(item.produto_nome, 18)} ` +
+      `${pad(String(item.quantidade).padStart(2, '0'), 2)} ` +
+      `${pad(uniStr, 10, 'right')} ` +
+      `${pad(totStr, 10, 'right')}`
     )
   })
 

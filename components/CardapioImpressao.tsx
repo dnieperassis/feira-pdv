@@ -11,18 +11,7 @@ interface Props {
   telefone:   string
 }
 
-const CAT_EMOJI: Record<string, string> = {
-  'Salgados':   '🥘',
-  'Pastéis':    '🥟',
-  'Bebidas':    '🥤',
-  'Caldos':     '🍲',
-  'Sobremesas': '🍰',
-  'Lanches':    '🍔',
-  'Doces':      '🍭',
-  'Sucos':      '🍊',
-}
-
-// Formata (11)99999-9999 ou (11)9999-9999
+// Formata telefone
 function formatTel(tel: string): string {
   const n = tel.replace(/\D/g, '')
   if (n.length === 11) return `(${n.slice(0,2)}) ${n.slice(2,7)}-${n.slice(7)}`
@@ -30,7 +19,7 @@ function formatTel(tel: string): string {
   return tel
 }
 
-// Ícone WhatsApp como SVG inline — imprime corretamente em @media print
+// Ícone WhatsApp SVG inline
 function WhatsAppIcon() {
   return (
     <svg viewBox="0 0 24 24" className="cp-wa-svg" aria-hidden="true">
@@ -47,26 +36,32 @@ export function CardapioImpressao({ produtos, categorias, nome, cidade, telefone
     .filter(g => g.itens.length > 0)
 
   return (
-    <div id="cardapio-pdf" aria-hidden="true" className="cardapio-container">
+    <div id="cardapio-pdf" aria-hidden="true">
 
-      {/* CABEÇALHO */}
-      <div className="cp-header">
-        <div className="cp-decoracao-topo">◆ ─── ◆ ─── ◆ ─── ◆ ─── ◆ ─── ◆ ─── ◆</div>
-        <div className="cp-icone">⚡</div>
-        <h1 className="cp-titulo">{nome || 'NOSSA BARRACA'}</h1>
-        <div className="cp-subtitulo">C A R D Á P I O</div>
-        <div className="cp-decoracao-baixo">◆ ─── ◆ ─── ◆ ─── ◆ ─── ◆ ─── ◆ ─── ◆</div>
+      {/* TOPO: Logo + Título */}
+      <div className="cp-topo">
+        <div className="cp-logo-box">
+          <div className="cp-logo-icone">🍽️</div>
+          <div className="cp-logo-sub">Delícias do</div>
+          <div className="cp-logo-sub">Pastel</div>
+        </div>
+        <div className="cp-titulo-box">
+          <div className="cp-estrelas">★ ★ ★ ★ ★</div>
+          <h1 className="cp-titulo">{nome || 'NOSSA BARRACA'}</h1>
+          <div className="cp-subtitulo-script">Cardápio</div>
+          <div className="cp-estrelas">★ ★ ★ ★ ★</div>
+        </div>
       </div>
 
-      {/* GRADE DUAS COLUNAS */}
+      {/* GRADE de categorias */}
       <div className="cp-grid">
         {grupos.map(grupo => (
           <section key={grupo.id} className="cp-secao">
-            <h2 className="cp-cat-titulo">
-              <span>{CAT_EMOJI[grupo.nome] ?? '•'}</span>
-              <span>{grupo.nome}</span>
-            </h2>
-            <div className="cp-cat-linha" />
+            {/* Banner vermelho da categoria */}
+            <div className="cp-cat-banner">
+              <div className="cp-cat-banner-titulo">{grupo.nome}</div>
+            </div>
+            {/* Itens */}
             <ul className="cp-lista">
               {grupo.itens.map(p => (
                 <li key={p.id} className="cp-item">
@@ -80,23 +75,20 @@ export function CardapioImpressao({ produtos, categorias, nome, cidade, telefone
         ))}
       </div>
 
-      {/* RODAPÉ + IMAGEM LADO A LADO */}
+      {/* RODAPÉ + IMAGEM */}
       <div className="cp-rodape-row">
-        {/* Texto do rodapé à esquerda */}
         <div className="cp-footer">
-          <div className="cp-footer-linha">✦ ──────────────────── ✦</div>
-          <p className="cp-footer-txt">Bom apetite! Qualidade e sabor em cada pedido.</p>
-          <div className="cp-footer-contato">
+          <div className="cp-footer-faixa">
             {telefone && (
               <div className="cp-wa-row">
                 <WhatsAppIcon />
                 <span className="cp-wa-num">{formatTel(telefone)}</span>
               </div>
             )}
-            {cidade && <p className="cp-footer-local">📍 {cidade}</p>}
+            {cidade && <span className="cp-footer-local">📍 {cidade}</span>}
           </div>
+          <p className="cp-footer-txt">Bom apetite! Qualidade e sabor em cada pedido.</p>
         </div>
-        {/* Imagem decorativa à direita */}
         <div className="cp-decoracao-imagem" />
       </div>
 
