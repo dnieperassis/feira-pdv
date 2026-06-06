@@ -192,6 +192,8 @@ interface FechamentoZBody {
 function buildFechamentoZ(body: FechamentoZBody, nome: string, cidade: string): Buffer {
   const { data_hora, resumo, top_produtos, por_hora } = body
 
+  // NOTA: brlEsc() já inclui o símbolo "R$" — não adicionar "R$ " manualmente
+
   const esc = new Escpos()
     .init().lf()
     .center().bold(true).size(1, 2).textLn(nome.toUpperCase())
@@ -204,10 +206,11 @@ function buildFechamentoZ(body: FechamentoZBody, nome: string, cidade: string): 
   esc.bold(true).textLn('RESUMO GERAL').bold(false)
     .row('Comandas:', String(resumo.total_comandas), COLS)
     .row('Itens vendidos:', String(resumo.total_itens), COLS)
-    .row('Ticket medio:', `R$ ${brlEsc(resumo.ticket_medio)}`, COLS)
+    .row('Ticket medio:', brlEsc(resumo.ticket_medio), COLS)
     .dashedLine(COLS)
-    .bold(true).size(1, 2).row('TOTAL DO DIA:', `R$ ${brlEsc(resumo.total_vendas)}`, COLS)
-    .size(1, 1).bold(false)
+    // TOTAL DO DIA — negrito normal (sem double-height) com destaque ***
+    .bold(true).row('*** TOTAL DO DIA:', brlEsc(resumo.total_vendas), COLS)
+    .bold(false)
 
   // ── Formas de Pagamento ───────────────────────────────
   esc.dashedLine(COLS)
@@ -219,16 +222,12 @@ function buildFechamentoZ(body: FechamentoZBody, nome: string, cidade: string): 
     { label: 'Debito:', val: resumo.total_debito },
     { label: 'Credito:', val: resumo.total_credito },
   ]
+  // Formas com valor primeiro, depois as zeradas (para conferência)
   for (const f of formas) {
-    if (f.val > 0) {
-      esc.row(f.label, `R$ ${brlEsc(f.val)}`, COLS)
-    }
+    if (f.val > 0) esc.row(f.label, brlEsc(f.val), COLS)
   }
-  // Formas com zero também listadas para conferência
   for (const f of formas) {
-    if (f.val === 0) {
-      esc.row(f.label, `R$ ${brlEsc(0)}`, COLS)
-    }
+    if (f.val === 0) esc.row(f.label, brlEsc(0), COLS)
   }
 
   // ── Top 10 Produtos ───────────────────────────────────
@@ -237,12 +236,12 @@ function buildFechamentoZ(body: FechamentoZBody, nome: string, cidade: string): 
       .bold(true).textLn('PRODUTOS MAIS VENDIDOS').bold(false)
 
     top_produtos.slice(0, 10).forEach((p, i) => {
-      // Formato: "01 NomeProduto...........  3x R$36,00"
-      const num    = String(i + 1).padStart(2, '0')
-      const preco  = `R$ ${brlEsc(p.receita)}`
-      const qtd    = `${String(p.qtd_vendida).padStart(3)}x`
-      const sufixo = ` ${qtd} ${preco}`         // " 003x R$ 36,00" = ~15 chars
-      const nomeMax = COLS - 3 - sufixo.length   // 3 = "01 "
+      // Formato: "01 NomeProduto......  3x R$36,00"
+      const num     = String(i + 1).padStart(2, '0')
+      const preco   = brlEsc(p.receita)               // "R$ 36,00"
+      const qtd     = `${String(p.qtd_vendida).padStart(3)}x`
+      const sufixo  = ` ${qtd} ${preco}`              // " 003x R$ 36,00" ≈ 16 chars
+      const nomeMax = COLS - 3 - sufixo.length        // 3 = "01 "
       const nomeCrop = pad(p.nome, nomeMax)
       esc.textLn(`${num} ${nomeCrop}${sufixo}`)
     })
@@ -255,7 +254,7 @@ function buildFechamentoZ(body: FechamentoZBody, nome: string, cidade: string): 
       .bold(true).textLn('HORARIO DE PICO').bold(false)
       .row('Hora mais movimentada:', `${String(picoPorCom.hora).padStart(2, '0')}h`, COLS)
       .row('Comandas nessa hora:', String(picoPorCom.comandas), COLS)
-      .row('Vendas nessa hora:', `R$ ${brlEsc(picoPorCom.total)}`, COLS)
+      .row('Vendas nessa hora:', brlEsc(picoPorCom.total), COLS)
   }
 
   // ── Rodapé ────────────────────────────────────────────
