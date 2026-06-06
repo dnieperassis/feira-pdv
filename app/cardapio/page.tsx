@@ -9,10 +9,10 @@ import { Modal } from '@/components/ui/Modal'
 import { CardapioImpressao } from '@/components/CardapioImpressao'
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
-type FormProd = { nome: string; preco: string; categoria_id: string; descricao: string; disponivel: boolean; composicao_qtd: string }
+type FormProd = { nome: string; preco: string; categoria_id: string; descricao: string; disponivel: boolean; composicao_qtd: string; controla_estoque: boolean; estoque_minimo: string }
 type FormCat  = { nome: string; ordem: string; is_adicional: boolean; is_composicao: boolean; composicao_from_cat_id: string }
 
-const formProdVazio: FormProd = { nome: '', preco: '', categoria_id: '', descricao: '', disponivel: true, composicao_qtd: '0' }
+const formProdVazio: FormProd = { nome: '', preco: '', categoria_id: '', descricao: '', disponivel: true, composicao_qtd: '0', controla_estoque: false, estoque_minimo: '0' }
 const formCatVazio:  FormCat  = { nome: '', ordem: '0', is_adicional: false, is_composicao: false, composicao_from_cat_id: '' }
 
 // ── Componente principal ───────────────────────────────────────────────────
@@ -60,7 +60,7 @@ export default function CardapioPage() {
   }
   function abrirEditarProd(p: Produto) {
     setEditandoProd(p)
-    setFormProd({ nome: p.nome, preco: String(p.preco), categoria_id: p.categoria_id?.toString() ?? '', descricao: p.descricao ?? '', disponivel: !!p.disponivel, composicao_qtd: String(p.composicao_qtd ?? 0) })
+    setFormProd({ nome: p.nome, preco: String(p.preco), categoria_id: p.categoria_id?.toString() ?? '', descricao: p.descricao ?? '', disponivel: !!p.disponivel, composicao_qtd: String(p.composicao_qtd ?? 0), controla_estoque: !!p.controla_estoque, estoque_minimo: String(p.estoque_minimo ?? 0) })
     setErroProd(''); setModalProd(true)
   }
 
@@ -75,6 +75,8 @@ export default function CardapioPage() {
       descricao: formProd.descricao.trim() || null,
       disponivel: formProd.disponivel ? 1 : 0,
       composicao_qtd: parseInt(formProd.composicao_qtd) || 0,
+      controla_estoque: formProd.controla_estoque ? 1 : 0,
+      estoque_minimo: parseFloat(formProd.estoque_minimo) || 0,
     }
     const res = editandoProd
       ? await fetch(`/api/produtos/${editandoProd.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -221,9 +223,16 @@ export default function CardapioPage() {
                       {produto.descricao && <p className="text-slate-400 text-xs mt-0.5 truncate">{produto.descricao}</p>}
                       <p className="text-slate-500 text-xs mt-1">{produto.categoria_nome ?? 'Sem categoria'}</p>
                     </div>
-                    <Badge color={produto.disponivel ? 'green' : 'slate'}>
-                      {produto.disponivel ? 'Disponível' : 'Indisponível'}
-                    </Badge>
+                    <div className="flex flex-col gap-1 items-end shrink-0">
+                      <Badge color={produto.disponivel ? 'green' : 'slate'}>
+                        {produto.disponivel ? 'Disponível' : 'Indisponível'}
+                      </Badge>
+                      {!!produto.controla_estoque && (
+                        <Badge color={produto.estoque_atual <= produto.estoque_minimo ? 'red' : 'blue'}>
+                          📦 {produto.estoque_atual}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <p className="text-amber-400 font-bold text-xl">R$ {brl(produto.preco)}</p>
                   <div className="flex gap-2 pt-1 border-t border-slate-700">
@@ -350,6 +359,38 @@ export default function CardapioPage() {
               className="w-5 h-5 accent-amber-500" />
             <span className="text-slate-300 text-sm">Disponível para venda</span>
           </label>
+
+          {/* ── Controle de Estoque ── */}
+          <div className="border border-slate-600 rounded-xl p-3 flex flex-col gap-3 bg-slate-800/50">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formProd.controla_estoque}
+                onChange={e => setFormProd(f => ({ ...f, controla_estoque: e.target.checked }))}
+                className="w-5 h-5 accent-emerald-500 mt-0.5 shrink-0"
+              />
+              <div>
+                <p className="text-white text-sm font-semibold">📦 Controlar Estoque</p>
+                <p className="text-slate-400 text-xs mt-0.5">Monitora quantidade disponível e alerta quando atingir o mínimo.</p>
+              </div>
+            </label>
+            {formProd.controla_estoque && (
+              <div>
+                <label className="text-slate-300 text-xs font-medium block mb-1">Estoque mínimo (alerta)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={formProd.estoque_minimo}
+                  onChange={e => setFormProd(f => ({ ...f, estoque_minimo: e.target.value }))}
+                  className="w-full bg-slate-700 border border-emerald-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-400"
+                  placeholder="0"
+                />
+                <p className="text-slate-500 text-xs mt-1">O sistema alertará quando o estoque ficar abaixo deste valor.</p>
+              </div>
+            )}
+          </div>
+
           {erroProd && <p className="text-red-400 text-sm">{erroProd}</p>}
           <div className="flex gap-3 pt-2">
             <Button variant="ghost" size="md" fullWidth onClick={() => setModalProd(false)}>Cancelar</Button>

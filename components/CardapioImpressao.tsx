@@ -30,10 +30,48 @@ function WhatsAppIcon() {
 
 export function CardapioImpressao({ produtos, categorias, nome, cidade, telefone }: Props) {
   const disponiveis = produtos.filter(p => p.disponivel)
+
   const grupos = categorias
     .filter(c => c.ativo)
     .map(c => ({ ...c, itens: disponiveis.filter(p => p.categoria_id === c.id) }))
     .filter(g => g.itens.length > 0)
+
+  // ── Sort inteligente para layout de 2 colunas ─────────────────────────────
+  // Objetivo: Adicionais (esquerda) + Bebidas (direita) na MESMA linha,
+  // o que reduz a altura total (dividem a linha em vez de ocupar linhas separadas).
+  //
+  // Ordem resultante:
+  //   [1] Regular com ordem < minOrdemComposicao  → ex: Pastéis Simples
+  //   [2] Composição                              → ex: Monte seu Pastel
+  //   [3] Adicional                               → ex: Adicionais   (coluna ESQUERDA)
+  //   [4] Regular com ordem ≥ minOrdemComposicao  → ex: Bebidas       (coluna DIREITA)
+  //                                                    Sucos Poupa   (coluna ESQUERDA — próxima linha)
+  const temComposicao = grupos.some(g => g.is_composicao)
+  const minOrdemComposicao = temComposicao
+    ? Math.min(...grupos.filter(g => g.is_composicao).map(g => g.ordem ?? 999))
+    : 999
+
+  const gruposOrdenados = [
+    // Categorias regulares "antes" da composição (ex: Pastéis Simples)
+    ...grupos
+      .filter(g => !g.is_adicional && !g.is_composicao && (g.ordem ?? 0) < minOrdemComposicao)
+      .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)),
+
+    // Categorias de composição (ex: Monte seu Pastel)
+    ...grupos
+      .filter(g => g.is_composicao)
+      .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)),
+
+    // Adicionais → sempre coluna ESQUERDA (índice par no grid)
+    ...grupos
+      .filter(g => g.is_adicional)
+      .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)),
+
+    // Categorias regulares "depois" da composição (ex: Bebidas → col DIREITA, Sucos → col ESQUERDA)
+    ...grupos
+      .filter(g => !g.is_adicional && !g.is_composicao && (g.ordem ?? 0) >= minOrdemComposicao)
+      .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)),
+  ]
 
   return (
     <div id="cardapio-pdf" aria-hidden="true">
@@ -58,15 +96,15 @@ export function CardapioImpressao({ produtos, categorias, nome, cidade, telefone
         </div>
       </div>
 
-      {/* GRADE de categorias — 2 colunas, auto-expande */}
+      {/* GRADE de categorias — 2 colunas, auto-expande verticalmente */}
       <div className="cp-grid">
-        {grupos.map(grupo => (
+        {gruposOrdenados.map(grupo => (
           <section key={grupo.id} className="cp-secao">
             {/* Banner vermelho — título à esquerda */}
             <div className="cp-cat-banner">
               <div className="cp-cat-banner-titulo">{grupo.nome}</div>
             </div>
-            {/* Itens */}
+            {/* Itens — texto quebra linha se necessário */}
             <ul className="cp-lista">
               {grupo.itens.map(p => (
                 <li key={p.id} className="cp-item">
