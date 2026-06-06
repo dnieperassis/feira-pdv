@@ -16,6 +16,19 @@ function isAdicional(categoria?: Categoria | null): boolean {
   return !!categoria?.is_adicional
 }
 
+// Retorna quantos sabores selecionar para um produto de composição.
+// Usa composicao_qtd se configurado; senão tenta extrair do nome do produto.
+// Ex: "2 Sabores" → 2, "1 Sabor" → 1, "Mistão" → 0 (sem modal)
+function getComposicaoQtd(produto: Produto, categoria: Categoria | null): number {
+  if (!categoria?.is_composicao) return 0
+  const qtdExplicita = produto.composicao_qtd ?? 0
+  if (qtdExplicita > 0) return qtdExplicita
+  // Fallback: detecta número no nome (ex: "2 Sabores", "3 sabores")
+  const match = produto.nome.match(/(\d+)\s*[Ss]abor/)
+  if (match) return parseInt(match[1])
+  return 0 // 0 = sem modal (Mistão, etc.)
+}
+
 const STATUS_ICON: Record<string, string> = {
   pendente:   '⏳',
   produzindo: '🔥',
@@ -127,10 +140,11 @@ export default function PedidosPage() {
   const [produtoAdicional, setProdutoAdicional] = useState<Produto | null>(null)
 
   // Modal composição (Monte seu Pastel)
-  const [modalComposicao, setModalComposicao]       = useState(false)
-  const [produtoComposicao, setProdutoComposicao]   = useState<Produto | null>(null)
+  const [modalComposicao, setModalComposicao]         = useState(false)
+  const [produtoComposicao, setProdutoComposicao]     = useState<Produto | null>(null)
+  const [composicaoQtdAtual, setComposicaoQtdAtual]   = useState(0)
   const [saboresSelecionados, setSaboresSelecionados] = useState<Produto[]>([])
-  const [produtosBase, setProdutosBase]             = useState<Produto[]>([])
+  const [produtosBase, setProdutosBase]               = useState<Produto[]>([])
 
   const carregarComanda = useCallback(async () => {
     const [r1, r2] = await Promise.all([
@@ -168,15 +182,16 @@ export default function PedidosPage() {
     const grupo = grupos.find(g => g.produtos.some(p => p.id === produto.id))
     const categoria = grupo?.categoria ?? null
 
-    // Composição (Monte seu Pastel): composicao_qtd > 0
-    if (categoria?.is_composicao && (produto.composicao_qtd ?? 0) > 0) {
-      // Carrega produtos da categoria de origem
-      const fromCatId = categoria.composicao_from_cat_id
+    // Composição (Monte seu Pastel): getComposicaoQtd > 0
+    const composicaoQtd = getComposicaoQtd(produto, categoria)
+    if (composicaoQtd > 0) {
+      const fromCatId = categoria?.composicao_from_cat_id
       const base = fromCatId
         ? grupos.find(g => g.categoria.id === fromCatId)?.produtos ?? []
-        : []
+        : grupos.find(g => g.categoria.id !== categoria?.id)?.produtos ?? []
       setProdutosBase(base)
       setProdutoComposicao(produto)
+      setComposicaoQtdAtual(composicaoQtd)
       setSaboresSelecionados([])
       setModalComposicao(true)
       return
@@ -201,11 +216,10 @@ export default function PedidosPage() {
 
   async function confirmarComposicao() {
     if (!produtoComposicao) return
-    const qtd = produtoComposicao.composicao_qtd ?? 0
+    const qtd = composicaoQtdAtual
     if (saboresSelecionados.length !== qtd) return
 
     setModalComposicao(false)
-    // Adiciona o item principal com os sabores como observação
     const obs = saboresSelecionados.map(s => s.nome).join(' / ')
     await fetch(`/api/comandas/${id}/itens`, {
       method: 'POST',
@@ -213,12 +227,13 @@ export default function PedidosPage() {
       body: JSON.stringify({ produto_id: produtoComposicao.id, quantidade: 1, observacao: obs }),
     })
     setProdutoComposicao(null)
+    setComposicaoQtdAtual(0)
     setSaboresSelecionados([])
     carregarComanda()
   }
 
   function toggleSabor(p: Produto) {
-    const qtd = produtoComposicao?.composicao_qtd ?? 0
+    const qtd = composicaoQtdAtual
     setSaboresSelecionados(prev => {
       const jaEsta = prev.some(s => s.id === p.id)
       if (jaEsta) return prev.filter(s => s.id !== p.id)
@@ -552,10 +567,10 @@ export default function PedidosPage() {
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <p className="text-slate-300 text-sm">
-                Selecione <span className="text-amber-400 font-bold">{produtoComposicao.composicao_qtd}</span> sabor(es):
+                Selecione <span className="text-amber-400 font-bold">{composicaoQtdAtual}</span> sabor(es):
               </p>
               <span className="text-amber-400 font-bold text-lg">
-                {saboresSelecionados.length} / {produtoComposicao.composicao_qtd}
+                {saboresSelecionados.length} / {composicaoQtdAtual}
               </span>
             </div>
 
@@ -563,14 +578,14 @@ export default function PedidosPage() {
             <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
               <div
                 className="h-full bg-amber-500 rounded-full transition-all"
-                style={{ width: `${(saboresSelecionados.length / (produtoComposicao.composicao_qtd || 1)) * 100}%` }}
+                style={{ width: `${(saboresSelecionados.length / (composicaoQtdAtual || 1)) * 100}%` }}
               />
             </div>
 
             <div className="flex flex-col gap-2 max-h-72 overflow-y-auto">
               {produtosBase.map(p => {
                 const selecionado = saboresSelecionados.some(s => s.id === p.id)
-                const maxAtingido = !selecionado && saboresSelecionados.length >= (produtoComposicao.composicao_qtd ?? 0)
+                const maxAtingido = !selecionado && saboresSelecionados.length >= composicaoQtdAtual
                 return (
                   <button
                     key={p.id}
@@ -611,10 +626,10 @@ export default function PedidosPage() {
             <Button
               size="md" fullWidth
               onClick={confirmarComposicao}
-              disabled={saboresSelecionados.length !== produtoComposicao.composicao_qtd}
+              disabled={saboresSelecionados.length !== composicaoQtdAtual}
             >
-              {saboresSelecionados.length < (produtoComposicao.composicao_qtd ?? 0)
-                ? `Selecione mais ${(produtoComposicao.composicao_qtd ?? 0) - saboresSelecionados.length} sabor(es)`
+              {saboresSelecionados.length < composicaoQtdAtual
+                ? `Selecione mais ${composicaoQtdAtual - saboresSelecionados.length} sabor(es)`
                 : `✓ Confirmar — ${saboresSelecionados.map(s => s.nome).join(' / ')}`
               }
             </Button>
