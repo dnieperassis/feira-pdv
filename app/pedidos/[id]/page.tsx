@@ -11,10 +11,9 @@ type ProdutoPorCat = { categoria: Categoria; produtos: Produto[] }
 type KotItem = { produto_nome: string; quantidade: number; observacao: string | null; parent_item_id?: number | null }
 type KotData  = { comanda: Comanda; itens: KotItem[]; enviado_em: string }
 
-// Detecta se uma categoria é de "adicionais"
-function isAdicional(categoriaNome?: string | null): boolean {
-  if (!categoriaNome) return false
-  return categoriaNome.toLowerCase().includes('adicional')
+// Detecta se uma categoria é de adicionais pelo flag is_adicional
+function isAdicional(categoria?: Categoria | null): boolean {
+  return !!categoria?.is_adicional
 }
 
 const STATUS_ICON: Record<string, string> = {
@@ -160,13 +159,13 @@ export default function PedidosPage() {
   }, [carregarComanda])
 
   async function adicionarItem(produto: Produto) {
-    // Descobre a categoria do produto
+    // Descobre a categoria do produto pelo flag is_adicional
     const grupo = grupos.find(g => g.produtos.some(p => p.id === produto.id))
-    const catNome = grupo?.categoria.nome ?? null
+    const categoria = grupo?.categoria ?? null
 
     // Se for adicional E existir algum item na comanda → pede seleção do pai
     const itensPais = itens.filter(i => !i.parent_item_id && i.status !== 'cancelado')
-    if (isAdicional(catNome) && itensPais.length > 0) {
+    if (isAdicional(categoria) && itensPais.length > 0) {
       setProdutoAdicional(produto)
       setModalAdicional(true)
       return

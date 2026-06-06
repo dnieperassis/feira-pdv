@@ -122,6 +122,14 @@ export function migrate(db: Database.Database) {
     db.exec("ALTER TABLE comanda_itens ADD COLUMN categoria_nome TEXT")
   }
 
+  // Migração: is_adicional em categorias (flag para categoria de adicionais)
+  const colsCat = db.prepare("PRAGMA table_info(categorias)").all() as { name: string }[]
+  if (!colsCat.find(c => c.name === 'is_adicional')) {
+    db.exec("ALTER TABLE categorias ADD COLUMN is_adicional INTEGER DEFAULT 0")
+    // Marca automaticamente categorias com nome contendo 'adicional'
+    db.exec("UPDATE categorias SET is_adicional = 1 WHERE lower(nome) LIKE '%adicional%'")
+  }
+
   seedInicial(db)
   seedAdm(db)
 }

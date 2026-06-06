@@ -10,6 +10,7 @@ export interface Categoria {
   nome: string
   ordem: number
   ativo: number
+  is_adicional: number
   criado_em: string
 }
 

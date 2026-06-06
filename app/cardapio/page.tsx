@@ -10,10 +10,10 @@ import { CardapioImpressao } from '@/components/CardapioImpressao'
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 type FormProd = { nome: string; preco: string; categoria_id: string; descricao: string; disponivel: boolean }
-type FormCat  = { nome: string; ordem: string }
+type FormCat  = { nome: string; ordem: string; is_adicional: boolean }
 
 const formProdVazio: FormProd = { nome: '', preco: '', categoria_id: '', descricao: '', disponivel: true }
-const formCatVazio:  FormCat  = { nome: '', ordem: '0' }
+const formCatVazio:  FormCat  = { nome: '', ordem: '0', is_adicional: false }
 
 // ── Componente principal ───────────────────────────────────────────────────
 export default function CardapioPage() {
@@ -100,19 +100,19 @@ export default function CardapioPage() {
   function abrirNovaCat() {
     setEditandoCat(null)
     const proximaOrdem = categorias.length > 0 ? Math.max(...categorias.map(c => c.ordem ?? 0)) + 1 : 1
-    setFormCat({ nome: '', ordem: String(proximaOrdem) })
+    setFormCat({ nome: '', ordem: String(proximaOrdem), is_adicional: false })
     setErroCat(''); setModalCat(true)
   }
   function abrirEditarCat(c: Categoria) {
     setEditandoCat(c)
-    setFormCat({ nome: c.nome, ordem: String(c.ordem ?? 0) })
+    setFormCat({ nome: c.nome, ordem: String(c.ordem ?? 0), is_adicional: !!c.is_adicional })
     setErroCat(''); setModalCat(true)
   }
 
   async function salvarCat() {
     if (!formCat.nome.trim()) { setErroCat('Nome obrigatório'); return }
     setSalvandoCat(true); setErroCat('')
-    const body = { nome: formCat.nome.trim(), ordem: parseInt(formCat.ordem) || 0 }
+    const body = { nome: formCat.nome.trim(), ordem: parseInt(formCat.ordem) || 0, is_adicional: formCat.is_adicional ? 1 : 0 }
     const res = editandoCat
       ? await fetch(`/api/categorias/${editandoCat.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       : await fetch('/api/categorias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -255,10 +255,15 @@ export default function CardapioPage() {
                       <p className="text-slate-500 text-xs">{qtd} produto{qtd !== 1 ? 's' : ''}</p>
                     </div>
 
-                    {/* Status */}
-                    <Badge color={cat.ativo ? 'green' : 'slate'}>
-                      {cat.ativo ? 'Ativa' : 'Inativa'}
-                    </Badge>
+                    {/* Badges */}
+                    <div className="flex gap-2">
+                      {!!cat.is_adicional && (
+                        <Badge color="amber">Adicional</Badge>
+                      )}
+                      <Badge color={cat.ativo ? 'green' : 'slate'}>
+                        {cat.ativo ? 'Ativa' : 'Inativa'}
+                      </Badge>
+                    </div>
 
                     {/* Ações */}
                     <div className="flex gap-2 shrink-0">
@@ -338,6 +343,16 @@ export default function CardapioPage() {
               placeholder="0" />
             <p className="text-slate-500 text-xs mt-1">Número menor aparece primeiro no cardápio</p>
           </div>
+          <label className="flex items-start gap-3 cursor-pointer bg-slate-800 rounded-xl p-3 border border-slate-600 hover:border-amber-500 transition-colors">
+            <input type="checkbox" checked={formCat.is_adicional} onChange={e => setFormCat(f => ({ ...f, is_adicional: e.target.checked }))}
+              className="w-5 h-5 accent-amber-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-white text-sm font-semibold">Categoria de Adicionais</p>
+              <p className="text-slate-400 text-xs mt-0.5">
+                Ao selecionar um produto desta categoria, o garçom será perguntado em qual item do pedido o adicional será inserido (ex: Catupiry no Pastel de Carne).
+              </p>
+            </div>
+          </label>
           {erroCat && <p className="text-red-400 text-sm">{erroCat}</p>}
           <div className="flex gap-3 pt-2">
             <Button variant="ghost" size="md" fullWidth onClick={() => setModalCat(false)}>Cancelar</Button>
