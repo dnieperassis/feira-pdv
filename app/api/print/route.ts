@@ -28,15 +28,17 @@ export async function POST(req: NextRequest) {
   const db  = getDb()
   const cfg = getConfig(db)
 
+  // fechamentoz precisa de impressora física configurada
   if (cfg.impressora_modo === 'browser') {
-    return NextResponse.json({ ok: false, modo: 'browser' })
+    return NextResponse.json({ ok: false, modo: 'browser', msg: 'Impressora térmica não configurada' })
   }
 
   try {
     let data: Buffer
-    if      (tipo === 'teste') data = buildTeste(cfg.nome)
-    else if (tipo === 'kot')   data = buildKot(body, cfg.nome)
-    else if (tipo === 'cupom') data = buildCupom(body, cfg.nome, cfg.cidade)
+    if      (tipo === 'teste')       data = buildTeste(cfg.nome)
+    else if (tipo === 'kot')         data = buildKot(body, cfg.nome)
+    else if (tipo === 'cupom')       data = buildCupom(body, cfg.nome, cfg.cidade)
+    else if (tipo === 'fechamentoz') data = buildFechamentoZ(body, cfg.nome, cfg.cidade)
     else return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 })
 
     if (cfg.impressora_modo === 'tcp') {
@@ -171,6 +173,102 @@ interface CupomBody {
   itens: CupomItem[]; forma: string; total: number; troco?: number
 }
 
+// ── Builder: Fechamento Z ────────────────────────────────────────────────────
+interface Resumo {
+  total_vendas: number; total_comandas: number; ticket_medio: number
+  total_dinheiro: number; total_pix: number; total_debito: number; total_credito: number
+  total_itens: number
+}
+interface TopProduto { nome: string; qtd_vendida: number; receita: number }
+interface PorHora    { hora: number; comandas: number; total: number }
+
+interface FechamentoZBody {
+  data_hora: string
+  resumo: Resumo
+  top_produtos: TopProduto[]
+  por_hora: PorHora[]
+}
+
+function buildFechamentoZ(body: FechamentoZBody, nome: string, cidade: string): Buffer {
+  const { data_hora, resumo, top_produtos, por_hora } = body
+
+  const esc = new Escpos()
+    .init().lf()
+    .center().bold(true).size(1, 2).textLn(nome.toUpperCase())
+    .size(1, 1).bold(false)
+    .center().textLn('FECHAMENTO DO DIA').lf()
+    .center().textLn(data_hora).lf()
+    .left().dashedLine(COLS)
+
+  // ── Resumo Geral ─────────────────────────────────────
+  esc.bold(true).textLn('RESUMO GERAL').bold(false)
+    .row('Comandas:', String(resumo.total_comandas), COLS)
+    .row('Itens vendidos:', String(resumo.total_itens), COLS)
+    .row('Ticket medio:', `R$ ${brlEsc(resumo.ticket_medio)}`, COLS)
+    .dashedLine(COLS)
+    .bold(true).size(1, 2).row('TOTAL DO DIA:', `R$ ${brlEsc(resumo.total_vendas)}`, COLS)
+    .size(1, 1).bold(false)
+
+  // ── Formas de Pagamento ───────────────────────────────
+  esc.dashedLine(COLS)
+    .bold(true).textLn('FORMAS DE PAGAMENTO').bold(false)
+
+  const formas = [
+    { label: 'Dinheiro:', val: resumo.total_dinheiro },
+    { label: 'PIX:', val: resumo.total_pix },
+    { label: 'Debito:', val: resumo.total_debito },
+    { label: 'Credito:', val: resumo.total_credito },
+  ]
+  for (const f of formas) {
+    if (f.val > 0) {
+      esc.row(f.label, `R$ ${brlEsc(f.val)}`, COLS)
+    }
+  }
+  // Formas com zero também listadas para conferência
+  for (const f of formas) {
+    if (f.val === 0) {
+      esc.row(f.label, `R$ ${brlEsc(0)}`, COLS)
+    }
+  }
+
+  // ── Top 10 Produtos ───────────────────────────────────
+  if (top_produtos?.length > 0) {
+    esc.dashedLine(COLS)
+      .bold(true).textLn('PRODUTOS MAIS VENDIDOS').bold(false)
+
+    top_produtos.slice(0, 10).forEach((p, i) => {
+      // Formato: "01 NomeProduto...........  3x R$36,00"
+      const num    = String(i + 1).padStart(2, '0')
+      const preco  = `R$ ${brlEsc(p.receita)}`
+      const qtd    = `${String(p.qtd_vendida).padStart(3)}x`
+      const sufixo = ` ${qtd} ${preco}`         // " 003x R$ 36,00" = ~15 chars
+      const nomeMax = COLS - 3 - sufixo.length   // 3 = "01 "
+      const nomeCrop = pad(p.nome, nomeMax)
+      esc.textLn(`${num} ${nomeCrop}${sufixo}`)
+    })
+  }
+
+  // ── Horário de Pico ───────────────────────────────────
+  if (por_hora?.length > 0) {
+    const picoPorCom = por_hora.reduce((max, h) => h.comandas > max.comandas ? h : max, por_hora[0])
+    esc.dashedLine(COLS)
+      .bold(true).textLn('HORARIO DE PICO').bold(false)
+      .row('Hora mais movimentada:', `${String(picoPorCom.hora).padStart(2, '0')}h`, COLS)
+      .row('Comandas nessa hora:', String(picoPorCom.comandas), COLS)
+      .row('Vendas nessa hora:', `R$ ${brlEsc(picoPorCom.total)}`, COLS)
+  }
+
+  // ── Rodapé ────────────────────────────────────────────
+  if (cidade) esc.dashedLine(COLS).center().textLn(cidade)
+
+  return esc
+    .lf().dashedLine(COLS)
+    .center().textLn('Emitido em: ' + data_hora)
+    .center().textLn('*** FIM DO FECHAMENTO ***')
+    .cut().build()
+}
+
+// ── Builder: Cupom ──────────────────────────────────────────────────────────
 function buildCupom(body: CupomBody, nome: string, cidade: string): Buffer {
   const { mesa, comanda_id, data_hora, itens, forma, total, troco } = body
 

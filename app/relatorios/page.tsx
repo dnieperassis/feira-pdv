@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { brl } from '@/lib/format'
+import { Button } from '@/components/ui/Button'
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 interface Resumo {
@@ -87,6 +88,11 @@ export default function RelatoriosPage() {
   const [aba, setAba] = useState<Aba>('resumo')
   const [dados, setDados] = useState<DadosRelatorio | null>(null)
   const [loading, setLoading] = useState(false)
+  const [imprimindoZ, setImprimindoZ] = useState(false)
+  const [msgZ, setMsgZ] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null)
+
+  // ── Detecta se o período é exatamente HOJE (único dia) ───────────────────────
+  const ehHoje = de === ate && de === hoje()
 
   const buscar = useCallback(async (d: string, a: string) => {
     setLoading(true)
@@ -106,6 +112,50 @@ export default function RelatoriosPage() {
     setDe(nd); setAte(na)
   }
 
+  // ── Impressão Fechamento Z na térmica ────────────────────────────────────────
+  async function imprimirFechamentoZ() {
+    if (!dados || !ehHoje) return
+    setImprimindoZ(true)
+    setMsgZ(null)
+
+    const agora = new Date()
+    const dataHora = agora.toLocaleString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    })
+
+    try {
+      const res = await fetch('/api/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'fechamentoz',
+          data_hora: dataHora,
+          resumo: dados.resumo,
+          top_produtos: dados.top_produtos,
+          por_hora: dados.por_hora,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.ok) {
+        const msg = json.msg ?? json.error ?? 'Erro ao imprimir'
+        setMsgZ({
+          tipo: 'erro',
+          texto: msg === 'Impressora térmica não configurada'
+            ? '⚠️ Impressora térmica não configurada. Acesse Configurações → Impressora.'
+            : `❌ ${msg}`,
+        })
+      } else {
+        setMsgZ({ tipo: 'ok', texto: '✅ Fechamento Z enviado para a impressora!' })
+        setTimeout(() => setMsgZ(null), 4000)
+      }
+    } catch {
+      setMsgZ({ tipo: 'erro', texto: '❌ Falha de comunicação com a impressora.' })
+    } finally {
+      setImprimindoZ(false)
+    }
+  }
+
   const ABAS: { id: Aba; label: string; icon: string }[] = [
     { id: 'resumo',     label: 'Resumo',      icon: '📊' },
     { id: 'evolucao',   label: 'Evolução',    icon: '📈' },
@@ -119,10 +169,40 @@ export default function RelatoriosPage() {
     <div className="p-4 flex flex-col gap-4 max-w-4xl mx-auto">
 
       {/* ── Cabeçalho ── */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-white font-bold text-xl">📊 Relatórios Gerenciais</h1>
-        {loading && <span className="text-amber-400 text-sm animate-pulse">Carregando...</span>}
+        <div className="flex items-center gap-3 flex-wrap">
+          {loading && <span className="text-amber-400 text-sm animate-pulse">Carregando...</span>}
+
+          {/* Botão Fechamento Z — apenas quando período = hoje */}
+          {ehHoje && dados && (
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={imprimirFechamentoZ}
+              disabled={imprimindoZ}
+              title="Imprime o Fechamento Z do dia na impressora térmica"
+            >
+              {imprimindoZ ? '⏳ Imprimindo...' : '🖨️ Fechamento Z'}
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Feedback da impressão */}
+      {msgZ && (
+        <div className={`px-4 py-3 rounded-xl text-sm font-medium border flex items-center gap-2 ${
+          msgZ.tipo === 'ok'
+            ? 'bg-green-950/50 border-green-700 text-green-300'
+            : 'bg-red-950/50 border-red-700 text-red-300'
+        }`}>
+          {msgZ.texto}
+          <button
+            onClick={() => setMsgZ(null)}
+            className="ml-auto text-current opacity-60 hover:opacity-100 text-lg leading-none"
+          >×</button>
+        </div>
+      )}
 
       {/* ── Seletor de período ── */}
       <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3">
