@@ -296,6 +296,9 @@ button {
   .kot-nome { font-weight: bold; flex: 1; }
   .kot-obs  { margin: 0 0 4px 36px; font-size: 13px; color: #444; width: 100%; }
   .kot-total { text-align: center; margin-top: 8px; font-size: 13px; }
+  /* Adicional recuado abaixo do item pai */
+  .kot-adicional { display: flex; gap: 6px; margin: 2px 0 4px 0; font-size: 14px; flex-wrap: wrap; padding-left: 5mm; }
+  .kot-adicional-seta { color: #666; font-size: 13px; }
 
   /* ── Cupom (reformulado - layout fiscal) ────────────── */
   .cupom-print {

@@ -57,12 +57,14 @@ export interface ComandaItem {
   comanda_id: number
   produto_id: number
   produto_nome?: string
+  categoria_nome?: string | null
   quantidade: number
   preco_unitario: number
   total: number
   observacao: string | null
   status: ItemStatus
   lancado_em: string
+  parent_item_id?: number | null
 }
 
 export interface Pagamento {

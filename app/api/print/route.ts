@@ -117,11 +117,24 @@ function buildTeste(nome: string): Buffer {
 // ── Builder: KOT ────────────────────────────────────────────────────────────
 interface KotBody {
   mesa: string; comanda_id: number; enviado_em: string
-  itens: { produto_nome: string; quantidade: number; observacao?: string }[]
+  itens: { produto_nome: string; quantidade: number; observacao?: string; parent_item_id?: number | null }[]
 }
 
 function buildKot(body: KotBody, _nome: string): Buffer {
   const { mesa, comanda_id, enviado_em, itens } = body
+
+  // Separa itens principais dos adicionais para agrupar na impressão
+  const principais = itens.filter(i => !i.parent_item_id)
+  const adicionaisPorPai: Record<number, typeof itens> = {}
+  itens.forEach((item, idx) => {
+    if (item.parent_item_id) {
+      // O parent_item_id aqui é o índice na lista de itens
+      // Na prática, agrupamos adicionais ao final do item pai
+      if (!adicionaisPorPai[item.parent_item_id]) adicionaisPorPai[item.parent_item_id] = []
+      adicionaisPorPai[item.parent_item_id].push(item)
+    }
+  })
+
   const esc = new Escpos()
     .init().lf()
     .center().bold(true).textLn('** COMANDA DE COZINHA **')
@@ -132,13 +145,22 @@ function buildKot(body: KotBody, _nome: string): Buffer {
     .lf().left().dashedLine(COLS)
 
   for (const item of itens) {
-    esc.bold(true).text(`${String(item.quantidade).padStart(2)}x `).bold(false).textLn(item.produto_nome)
-    if (item.observacao) esc.textLn(`   >> ${item.observacao}`)
+    const ehAdicional = !!item.parent_item_id
+
+    if (ehAdicional) {
+      // Adicional: recuado ~4 espaços (≈ 0,5cm) + símbolo de vínculo
+      esc.text('    ').bold(false).text(`+ ${String(item.quantidade).padStart(2)}x `).textLn(item.produto_nome)
+    } else {
+      // Item principal: negrito + quantidade
+      esc.bold(true).text(`${String(item.quantidade).padStart(2)}x `).bold(false).textLn(item.produto_nome)
+    }
+    if (item.observacao) esc.textLn(`       >> ${item.observacao}`)
   }
 
+  const totalItens = itens.filter(i => !i.parent_item_id).length
   return esc
     .dashedLine(COLS)
-    .center().textLn(`${itens.length} item(s) enviado(s)`)
+    .center().textLn(`${totalItens} item(s) + adicionais`)
     .lf().cut().build()
 }
 

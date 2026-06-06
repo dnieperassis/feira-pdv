@@ -8,8 +8,14 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 
 type ProdutoPorCat = { categoria: Categoria; produtos: Produto[] }
-type KotItem = { produto_nome: string; quantidade: number; observacao: string | null }
+type KotItem = { produto_nome: string; quantidade: number; observacao: string | null; parent_item_id?: number | null }
 type KotData  = { comanda: Comanda; itens: KotItem[]; enviado_em: string }
+
+// Detecta se uma categoria é de "adicionais"
+function isAdicional(categoriaNome?: string | null): boolean {
+  if (!categoriaNome) return false
+  return categoriaNome.toLowerCase().includes('adicional')
+}
 
 const STATUS_ICON: Record<string, string> = {
   pendente:   '⏳',
@@ -44,40 +50,47 @@ function PainelPedidos({
       <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-1 min-h-[200px]">
         {itens.length === 0 ? (
           <p className="text-slate-500 text-sm text-center mt-8">Nenhum item adicionado</p>
-        ) : itens.map(item => (
-          <div
-            key={item.id}
-            className={[
-              'flex items-start justify-between gap-1 py-2 border-b border-slate-800',
-              item.status === 'cancelado' ? 'opacity-35 line-through' : '',
-            ].join(' ')}
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm shrink-0" title={item.status}>{STATUS_ICON[item.status]}</span>
-                <p className="text-white text-sm font-medium truncate">{item.produto_nome}</p>
+        ) : itens.map(item => {
+          const ehAdicional = !!item.parent_item_id
+          return (
+            <div
+              key={item.id}
+              className={[
+                'flex items-start justify-between gap-1 py-1.5 border-b border-slate-800',
+                ehAdicional ? 'ml-4 border-l-2 border-l-amber-500/40 pl-2' : '',
+                item.status === 'cancelado' ? 'opacity-35 line-through' : '',
+              ].join(' ')}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  {ehAdicional && <span className="text-amber-500/70 text-xs shrink-0">↳</span>}
+                  <span className="text-sm shrink-0" title={item.status}>{STATUS_ICON[item.status]}</span>
+                  <p className={`text-sm font-medium truncate ${ehAdicional ? 'text-amber-300' : 'text-white'}`}>
+                    {item.produto_nome}
+                  </p>
+                </div>
+                <p className={`text-xs ${ehAdicional ? 'ml-8' : 'ml-5'} text-slate-400`}>x{item.quantidade}</p>
               </div>
-              <p className="text-slate-400 text-xs ml-5">x{item.quantidade}</p>
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="text-amber-400 text-sm font-semibold">R$ {brl(item.total)}</span>
+                {item.status !== 'cancelado' && item.status !== 'entregue' && (
+                  <button
+                    onClick={() => onCancelar(item)}
+                    title="Cancelar item"
+                    className={[
+                      'ml-1 w-7 h-7 flex items-center justify-center rounded-lg text-sm font-bold transition-colors',
+                      item.status === 'pendente'
+                        ? 'text-slate-500 hover:text-red-400 hover:bg-red-900/30'
+                        : 'text-amber-500 hover:text-red-400 hover:bg-red-900/30',
+                    ].join(' ')}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-1 shrink-0">
-              <span className="text-amber-400 text-sm font-semibold">R$ {brl(item.total)}</span>
-              {item.status !== 'cancelado' && item.status !== 'entregue' && (
-                <button
-                  onClick={() => onCancelar(item)}
-                  title="Cancelar item"
-                  className={[
-                    'ml-1 w-7 h-7 flex items-center justify-center rounded-lg text-sm font-bold transition-colors',
-                    item.status === 'pendente'
-                      ? 'text-slate-500 hover:text-red-400 hover:bg-red-900/30'
-                      : 'text-amber-500 hover:text-red-400 hover:bg-red-900/30',
-                  ].join(' ')}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
       <div className="px-4 py-3 border-t border-slate-700 bg-slate-800">
         <div className="flex justify-between items-center">
@@ -109,6 +122,10 @@ export default function PedidosPage() {
 
   // Drawer mobile do painel de pedidos
   const [drawerAberto, setDrawerAberto] = useState(false)
+
+  // Modal seleção de pai (adicionais)
+  const [modalAdicional, setModalAdicional]     = useState(false)
+  const [produtoAdicional, setProdutoAdicional] = useState<Produto | null>(null)
 
   const carregarComanda = useCallback(async () => {
     const [r1, r2] = await Promise.all([
@@ -143,11 +160,40 @@ export default function PedidosPage() {
   }, [carregarComanda])
 
   async function adicionarItem(produto: Produto) {
+    // Descobre a categoria do produto
+    const grupo = grupos.find(g => g.produtos.some(p => p.id === produto.id))
+    const catNome = grupo?.categoria.nome ?? null
+
+    // Se for adicional E existir algum item na comanda → pede seleção do pai
+    const itensPais = itens.filter(i => !i.parent_item_id && i.status !== 'cancelado')
+    if (isAdicional(catNome) && itensPais.length > 0) {
+      setProdutoAdicional(produto)
+      setModalAdicional(true)
+      return
+    }
+
+    // Caso contrário, adiciona normalmente (sem pai)
     await fetch(`/api/comandas/${id}/itens`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ produto_id: produto.id, quantidade: 1 }),
     })
+    carregarComanda()
+  }
+
+  async function confirmarAdicional(parentItemId: number | null) {
+    if (!produtoAdicional) return
+    setModalAdicional(false)
+    await fetch(`/api/comandas/${id}/itens`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        produto_id: produtoAdicional.id,
+        quantidade: 1,
+        parent_item_id: parentItemId,
+      }),
+    })
+    setProdutoAdicional(null)
     carregarComanda()
   }
 
@@ -265,9 +311,11 @@ export default function PedidosPage() {
             </div>
             <hr />
             {kotData.itens.map((item, i) => (
-              <div key={i} className="kot-item">
-                <span className="kot-qty">{item.quantidade}x</span>
-                <span className="kot-nome">{item.produto_nome}</span>
+              <div key={i} className={item.parent_item_id ? 'kot-adicional' : 'kot-item'}>
+                {item.parent_item_id
+                  ? <><span className="kot-adicional-seta">    +</span><span className="kot-qty">{item.quantidade}x</span><span className="kot-nome">{item.produto_nome}</span></>
+                  : <><span className="kot-qty">{item.quantidade}x</span><span className="kot-nome">{item.produto_nome}</span></>
+                }
                 {item.observacao && <p className="kot-obs">  ↳ {item.observacao}</p>}
               </div>
             ))}
@@ -447,6 +495,43 @@ export default function PedidosPage() {
           </div>
         )}
       </div>
+
+      {/* ── Modal Adicional: selecionar item pai ── */}
+      <Modal
+        open={modalAdicional}
+        onClose={() => { setModalAdicional(false); setProdutoAdicional(null) }}
+        title={`Adicional: ${produtoAdicional?.nome ?? ''}`}
+      >
+        <div className="flex flex-col gap-3">
+          <p className="text-slate-300 text-sm">
+            Em qual item este adicional será inserido?
+          </p>
+          <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+            {itens
+              .filter(i => !i.parent_item_id && i.status !== 'cancelado')
+              .map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => confirmarAdicional(item.id)}
+                  className="flex items-center justify-between px-4 py-3 bg-slate-800 hover:bg-amber-500/20 border border-slate-600 hover:border-amber-500 rounded-xl transition-all text-left"
+                >
+                  <div>
+                    <p className="text-white font-semibold">{item.produto_nome}</p>
+                    <p className="text-slate-400 text-xs">x{item.quantidade} · R$ {brl(item.total)}</p>
+                  </div>
+                  <span className="text-amber-400 text-lg">→</span>
+                </button>
+              ))
+            }
+          </div>
+          <button
+            onClick={() => confirmarAdicional(null)}
+            className="w-full px-4 py-2 text-slate-400 hover:text-slate-200 text-sm border border-dashed border-slate-600 rounded-xl transition-colors"
+          >
+            Adicionar sem vincular a um item específico
+          </button>
+        </div>
+      </Modal>
 
       {/* ── Modal Trocar Mesa ── */}
       <Modal open={modalTroca} onClose={() => setModalTroca(false)} title="Trocar Mesa" maxWidth="max-w-xl">

@@ -113,6 +113,15 @@ export function migrate(db: Database.Database) {
     db.exec("ALTER TABLE comandas ADD COLUMN operador_id INTEGER REFERENCES operadores(id) ON DELETE SET NULL")
   }
 
+  // Migração: parent_item_id em comanda_itens (para adicionais vinculados ao item pai)
+  const colsCi = db.prepare("PRAGMA table_info(comanda_itens)").all() as { name: string }[]
+  if (!colsCi.find(c => c.name === 'parent_item_id')) {
+    db.exec("ALTER TABLE comanda_itens ADD COLUMN parent_item_id INTEGER REFERENCES comanda_itens(id) ON DELETE SET NULL")
+  }
+  if (!colsCi.find(c => c.name === 'categoria_nome')) {
+    db.exec("ALTER TABLE comanda_itens ADD COLUMN categoria_nome TEXT")
+  }
+
   seedInicial(db)
   seedAdm(db)
 }

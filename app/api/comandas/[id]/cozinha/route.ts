@@ -23,8 +23,8 @@ export async function POST(_req: Request, { params }: Params) {
     FROM comanda_itens ci
     JOIN produtos p ON p.id = ci.produto_id
     WHERE ci.comanda_id = ? AND ci.status = 'pendente'
-    ORDER BY ci.lancado_em
-  `).all(id) as Array<{ id: number; produto_nome: string; quantidade: number; observacao: string | null }>
+    ORDER BY COALESCE(ci.parent_item_id, ci.id), ci.id
+  `).all(id) as Array<{ id: number; produto_nome: string; quantidade: number; observacao: string | null; parent_item_id: number | null }>
 
   if (pendentes.length === 0) {
     return NextResponse.json({ error: 'Nenhum item pendente para enviar' }, { status: 400 })

@@ -9,9 +9,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { id } = await params
   const db = getDb()
   const itens = db.prepare(`
-    SELECT ci.*, p.nome AS produto_nome
+    SELECT ci.*, p.nome AS produto_nome, c.nome AS categoria_nome
     FROM comanda_itens ci
     JOIN produtos p ON p.id = ci.produto_id
+    LEFT JOIN categorias c ON c.id = p.categoria_id
     WHERE ci.comanda_id = ? AND ci.status != 'cancelado'
     ORDER BY ci.lancado_em
   `).all(id)
@@ -20,7 +21,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 export async function POST(req: NextRequest, { params }: Params) {
   const { id } = await params
-  const { produto_id, quantidade = 1, observacao } = await req.json()
+  const { produto_id, quantidade = 1, observacao, parent_item_id } = await req.json()
   const db = getDb()
 
   const comanda = db.prepare("SELECT id, status FROM comandas WHERE id = ?").get(id) as { id: number, status: string } | undefined
@@ -30,11 +31,17 @@ export async function POST(req: NextRequest, { params }: Params) {
   const produto = db.prepare('SELECT id, preco, nome FROM produtos WHERE id = ? AND disponivel = 1').get(produto_id) as { id: number, preco: number, nome: string } | undefined
   if (!produto) return NextResponse.json({ error: 'Produto indisponível' }, { status: 404 })
 
+  // Valida parent_item_id se informado
+  if (parent_item_id) {
+    const pai = db.prepare('SELECT id FROM comanda_itens WHERE id = ? AND comanda_id = ?').get(parent_item_id, id)
+    if (!pai) return NextResponse.json({ error: 'Item pai não encontrado nesta comanda' }, { status: 404 })
+  }
+
   const total = produto.preco * quantidade
   const result = db.prepare(`
-    INSERT INTO comanda_itens (comanda_id, produto_id, quantidade, preco_unitario, total, observacao)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(id, produto_id, quantidade, produto.preco, total, observacao ?? null)
+    INSERT INTO comanda_itens (comanda_id, produto_id, quantidade, preco_unitario, total, observacao, parent_item_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(id, produto_id, quantidade, produto.preco, total, observacao ?? null, parent_item_id ?? null)
 
   // Atualiza total da comanda
   db.prepare(`
@@ -55,8 +62,11 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const row = db.prepare(`
-    SELECT ci.*, p.nome AS produto_nome FROM comanda_itens ci
-    JOIN produtos p ON p.id = ci.produto_id WHERE ci.id = ?
+    SELECT ci.*, p.nome AS produto_nome, c.nome AS categoria_nome
+    FROM comanda_itens ci
+    JOIN produtos p ON p.id = ci.produto_id
+    LEFT JOIN categorias c ON c.id = p.categoria_id
+    WHERE ci.id = ?
   `).get(result.lastInsertRowid)
 
   return NextResponse.json(row, { status: 201 })
