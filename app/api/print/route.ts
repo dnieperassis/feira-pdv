@@ -221,7 +221,7 @@ function buildCupom(body: CupomBody, nome: string, cidade: string): Buffer {
     .dashedLine(COLS)
     .row('Por Pessoa (div.2)', brlEsc(total / 2), COLS)
     .lf().dashedLine(COLS)
-    .center().textLn(`Pagamento: ${formas[forma] ?? forma}`)
+    .center().textLn('Aceitamos Pix, Cartao de Credito e Debito.')
 
   if (forma === 'dinheiro' && troco && troco > 0) {
     esc.center().textLn(`Troco: ${brlEsc(troco)}`)

@@ -205,7 +205,7 @@ export default function CaixaPage() {
 
         <div className="cupom-divider" />
         <div className="cupom-center" style={{ fontSize: 10 }}>
-          Pagamento: {FORMAS.find(f => f.id === forma)?.label ?? forma}
+          Aceitamos Pix, Cartão de Crédito e Débito.
         </div>
         {forma === 'dinheiro' && troco > 0 && (
           <div className="cupom-center" style={{ fontSize: 10 }}>
