@@ -38,13 +38,18 @@ export function CardapioImpressao({ produtos, categorias, nome, cidade, telefone
   return (
     <div id="cardapio-pdf" aria-hidden="true">
 
-      {/* TOPO: Logo + Título */}
+      {/* Faixa decorativa tricolor no topo */}
+      <div className="cp-faixa-top" />
+
+      {/* TOPO: Logo (foto do pastel) + Título */}
       <div className="cp-topo">
+        {/* Círculo com foto do pastel */}
         <div className="cp-logo-box">
-          <div className="cp-logo-icone">🍽️</div>
-          <div className="cp-logo-sub">Delícias do</div>
-          <div className="cp-logo-sub">Pastel</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/pasteis-bg.jpg" alt="Pastéis" className="cp-logo-img" />
         </div>
+
+        {/* Título centralizado */}
         <div className="cp-titulo-box">
           <div className="cp-estrelas">★ ★ ★ ★ ★</div>
           <h1 className="cp-titulo">{nome || 'NOSSA BARRACA'}</h1>
@@ -53,11 +58,11 @@ export function CardapioImpressao({ produtos, categorias, nome, cidade, telefone
         </div>
       </div>
 
-      {/* GRADE de categorias */}
+      {/* GRADE de categorias — 2 colunas, auto-expande */}
       <div className="cp-grid">
         {grupos.map(grupo => (
           <section key={grupo.id} className="cp-secao">
-            {/* Banner vermelho da categoria */}
+            {/* Banner vermelho — título à esquerda */}
             <div className="cp-cat-banner">
               <div className="cp-cat-banner-titulo">{grupo.nome}</div>
             </div>
@@ -75,7 +80,7 @@ export function CardapioImpressao({ produtos, categorias, nome, cidade, telefone
         ))}
       </div>
 
-      {/* RODAPÉ + IMAGEM */}
+      {/* RODAPÉ: contato à esquerda + foto decorativa à direita */}
       <div className="cp-rodape-row">
         <div className="cp-footer">
           <div className="cp-footer-faixa">
@@ -89,6 +94,8 @@ export function CardapioImpressao({ produtos, categorias, nome, cidade, telefone
           </div>
           <p className="cp-footer-txt">Bom apetite! Qualidade e sabor em cada pedido.</p>
         </div>
+
+        {/* Foto decorativa canto inferior direito */}
         <div className="cp-decoracao-imagem" />
       </div>
 
