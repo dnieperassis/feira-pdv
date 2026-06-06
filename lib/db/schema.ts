@@ -122,12 +122,22 @@ export function migrate(db: Database.Database) {
     db.exec("ALTER TABLE comanda_itens ADD COLUMN categoria_nome TEXT")
   }
 
-  // Migração: is_adicional em categorias (flag para categoria de adicionais)
+  // Migração: is_adicional em categorias
   const colsCat = db.prepare("PRAGMA table_info(categorias)").all() as { name: string }[]
   if (!colsCat.find(c => c.name === 'is_adicional')) {
     db.exec("ALTER TABLE categorias ADD COLUMN is_adicional INTEGER DEFAULT 0")
-    // Marca automaticamente categorias com nome contendo 'adicional'
     db.exec("UPDATE categorias SET is_adicional = 1 WHERE lower(nome) LIKE '%adicional%'")
+  }
+  // Migração: is_composicao + composicao_from_cat_id em categorias
+  if (!colsCat.find(c => c.name === 'is_composicao')) {
+    db.exec("ALTER TABLE categorias ADD COLUMN is_composicao INTEGER DEFAULT 0")
+    db.exec("ALTER TABLE categorias ADD COLUMN composicao_from_cat_id INTEGER")
+    db.exec("UPDATE categorias SET is_composicao = 1 WHERE lower(nome) LIKE '%monte%'")
+  }
+  // Migração: composicao_qtd em produtos (0 = sem modal, ex: Mistão)
+  const colsProd = db.prepare("PRAGMA table_info(produtos)").all() as { name: string }[]
+  if (!colsProd.find(c => c.name === 'composicao_qtd')) {
+    db.exec("ALTER TABLE produtos ADD COLUMN composicao_qtd INTEGER DEFAULT 0")
   }
 
   seedInicial(db)

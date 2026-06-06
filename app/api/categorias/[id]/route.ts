@@ -7,7 +7,6 @@ type Params = { params: Promise<{ id: string }> }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params
-  const { nome, ordem, ativo, is_adicional } = await req.json()
   const db = getDb()
 
   const cat = db.prepare('SELECT id FROM categorias WHERE id = ?').get(id)
@@ -16,10 +15,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const sets: string[] = []
   const values: unknown[] = []
 
-  if (nome         !== undefined) { sets.push('nome         = ?'); values.push(nome.trim()) }
-  if (ordem        !== undefined) { sets.push('ordem        = ?'); values.push(ordem) }
-  if (ativo        !== undefined) { sets.push('ativo        = ?'); values.push(ativo) }
-  if (is_adicional !== undefined) { sets.push('is_adicional = ?'); values.push(is_adicional) }
+  const { nome, ordem, ativo, is_adicional, is_composicao, composicao_from_cat_id } = await req.json()
+
+  if (nome                  !== undefined) { sets.push('nome                  = ?'); values.push(nome.trim()) }
+  if (ordem                 !== undefined) { sets.push('ordem                 = ?'); values.push(ordem) }
+  if (ativo                 !== undefined) { sets.push('ativo                 = ?'); values.push(ativo) }
+  if (is_adicional          !== undefined) { sets.push('is_adicional          = ?'); values.push(is_adicional) }
+  if (is_composicao         !== undefined) { sets.push('is_composicao         = ?'); values.push(is_composicao) }
+  if (composicao_from_cat_id !== undefined) { sets.push('composicao_from_cat_id = ?'); values.push(composicao_from_cat_id ?? null) }
 
   if (sets.length === 0) return NextResponse.json({ error: 'Nada a atualizar' }, { status: 400 })
 

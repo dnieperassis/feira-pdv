@@ -11,6 +11,8 @@ export interface Categoria {
   ordem: number
   ativo: number
   is_adicional: number
+  is_composicao: number
+  composicao_from_cat_id: number | null
   criado_em: string
 }
 
@@ -25,6 +27,7 @@ export interface Produto {
   estoque_atual: number
   estoque_minimo: number
   controla_estoque: number
+  composicao_qtd: number   // 0 = sem modal (ex: Mistão), N = selecionar N sabores
   criado_em: string
 }
 

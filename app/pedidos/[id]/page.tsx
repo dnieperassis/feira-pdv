@@ -126,6 +126,12 @@ export default function PedidosPage() {
   const [modalAdicional, setModalAdicional]     = useState(false)
   const [produtoAdicional, setProdutoAdicional] = useState<Produto | null>(null)
 
+  // Modal composição (Monte seu Pastel)
+  const [modalComposicao, setModalComposicao]       = useState(false)
+  const [produtoComposicao, setProdutoComposicao]   = useState<Produto | null>(null)
+  const [saboresSelecionados, setSaboresSelecionados] = useState<Produto[]>([])
+  const [produtosBase, setProdutosBase]             = useState<Produto[]>([])
+
   const carregarComanda = useCallback(async () => {
     const [r1, r2] = await Promise.all([
       fetch(`/api/comandas/${id}`),
@@ -159,11 +165,24 @@ export default function PedidosPage() {
   }, [carregarComanda])
 
   async function adicionarItem(produto: Produto) {
-    // Descobre a categoria do produto pelo flag is_adicional
     const grupo = grupos.find(g => g.produtos.some(p => p.id === produto.id))
     const categoria = grupo?.categoria ?? null
 
-    // Se for adicional E existir algum item na comanda → pede seleção do pai
+    // Composição (Monte seu Pastel): composicao_qtd > 0
+    if (categoria?.is_composicao && (produto.composicao_qtd ?? 0) > 0) {
+      // Carrega produtos da categoria de origem
+      const fromCatId = categoria.composicao_from_cat_id
+      const base = fromCatId
+        ? grupos.find(g => g.categoria.id === fromCatId)?.produtos ?? []
+        : []
+      setProdutosBase(base)
+      setProdutoComposicao(produto)
+      setSaboresSelecionados([])
+      setModalComposicao(true)
+      return
+    }
+
+    // Adicional: abre modal de seleção do item pai
     const itensPais = itens.filter(i => !i.parent_item_id && i.status !== 'cancelado')
     if (isAdicional(categoria) && itensPais.length > 0) {
       setProdutoAdicional(produto)
@@ -171,13 +190,41 @@ export default function PedidosPage() {
       return
     }
 
-    // Caso contrário, adiciona normalmente (sem pai)
+    // Normal: adiciona direto
     await fetch(`/api/comandas/${id}/itens`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ produto_id: produto.id, quantidade: 1 }),
     })
     carregarComanda()
+  }
+
+  async function confirmarComposicao() {
+    if (!produtoComposicao) return
+    const qtd = produtoComposicao.composicao_qtd ?? 0
+    if (saboresSelecionados.length !== qtd) return
+
+    setModalComposicao(false)
+    // Adiciona o item principal com os sabores como observação
+    const obs = saboresSelecionados.map(s => s.nome).join(' / ')
+    await fetch(`/api/comandas/${id}/itens`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ produto_id: produtoComposicao.id, quantidade: 1, observacao: obs }),
+    })
+    setProdutoComposicao(null)
+    setSaboresSelecionados([])
+    carregarComanda()
+  }
+
+  function toggleSabor(p: Produto) {
+    const qtd = produtoComposicao?.composicao_qtd ?? 0
+    setSaboresSelecionados(prev => {
+      const jaEsta = prev.some(s => s.id === p.id)
+      if (jaEsta) return prev.filter(s => s.id !== p.id)
+      if (prev.length >= qtd) return prev  // já atingiu o máximo
+      return [...prev, p]
+    })
   }
 
   async function confirmarAdicional(parentItemId: number | null) {
@@ -494,6 +541,86 @@ export default function PedidosPage() {
           </div>
         )}
       </div>
+
+      {/* ── Modal Composição: selecionar sabores ── */}
+      <Modal
+        open={modalComposicao}
+        onClose={() => { setModalComposicao(false); setProdutoComposicao(null); setSaboresSelecionados([]) }}
+        title={produtoComposicao?.nome ?? 'Selecionar Sabores'}
+      >
+        {produtoComposicao && (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <p className="text-slate-300 text-sm">
+                Selecione <span className="text-amber-400 font-bold">{produtoComposicao.composicao_qtd}</span> sabor(es):
+              </p>
+              <span className="text-amber-400 font-bold text-lg">
+                {saboresSelecionados.length} / {produtoComposicao.composicao_qtd}
+              </span>
+            </div>
+
+            {/* Barra de progresso */}
+            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-amber-500 rounded-full transition-all"
+                style={{ width: `${(saboresSelecionados.length / (produtoComposicao.composicao_qtd || 1)) * 100}%` }}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2 max-h-72 overflow-y-auto">
+              {produtosBase.map(p => {
+                const selecionado = saboresSelecionados.some(s => s.id === p.id)
+                const maxAtingido = !selecionado && saboresSelecionados.length >= (produtoComposicao.composicao_qtd ?? 0)
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => toggleSabor(p)}
+                    disabled={maxAtingido}
+                    className={[
+                      'flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all text-left',
+                      selecionado
+                        ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                        : maxAtingido
+                          ? 'bg-slate-800 border-slate-700 text-slate-500 opacity-50 cursor-not-allowed'
+                          : 'bg-slate-800 border-slate-600 text-white hover:border-amber-400',
+                    ].join(' ')}
+                  >
+                    <span className="font-semibold">{p.nome}</span>
+                    {selecionado
+                      ? <span className="text-amber-400 text-xl">✓</span>
+                      : <span className="text-slate-500 text-xl">○</span>
+                    }
+                  </button>
+                )
+              })}
+              {produtosBase.length === 0 && (
+                <p className="text-slate-500 text-sm text-center py-4">
+                  Nenhum produto na categoria de origem configurada.
+                </p>
+              )}
+            </div>
+
+            {/* Sabores selecionados */}
+            {saboresSelecionados.length > 0 && (
+              <div className="bg-slate-800 rounded-xl px-3 py-2 text-sm text-amber-300">
+                <span className="text-slate-400">Selecionados: </span>
+                {saboresSelecionados.map(s => s.nome).join(' / ')}
+              </div>
+            )}
+
+            <Button
+              size="md" fullWidth
+              onClick={confirmarComposicao}
+              disabled={saboresSelecionados.length !== produtoComposicao.composicao_qtd}
+            >
+              {saboresSelecionados.length < (produtoComposicao.composicao_qtd ?? 0)
+                ? `Selecione mais ${(produtoComposicao.composicao_qtd ?? 0) - saboresSelecionados.length} sabor(es)`
+                : `✓ Confirmar — ${saboresSelecionados.map(s => s.nome).join(' / ')}`
+              }
+            </Button>
+          </div>
+        )}
+      </Modal>
 
       {/* ── Modal Adicional: selecionar item pai ── */}
       <Modal

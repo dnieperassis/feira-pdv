@@ -9,11 +9,11 @@ import { Modal } from '@/components/ui/Modal'
 import { CardapioImpressao } from '@/components/CardapioImpressao'
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
-type FormProd = { nome: string; preco: string; categoria_id: string; descricao: string; disponivel: boolean }
-type FormCat  = { nome: string; ordem: string; is_adicional: boolean }
+type FormProd = { nome: string; preco: string; categoria_id: string; descricao: string; disponivel: boolean; composicao_qtd: string }
+type FormCat  = { nome: string; ordem: string; is_adicional: boolean; is_composicao: boolean; composicao_from_cat_id: string }
 
-const formProdVazio: FormProd = { nome: '', preco: '', categoria_id: '', descricao: '', disponivel: true }
-const formCatVazio:  FormCat  = { nome: '', ordem: '0', is_adicional: false }
+const formProdVazio: FormProd = { nome: '', preco: '', categoria_id: '', descricao: '', disponivel: true, composicao_qtd: '0' }
+const formCatVazio:  FormCat  = { nome: '', ordem: '0', is_adicional: false, is_composicao: false, composicao_from_cat_id: '' }
 
 // ── Componente principal ───────────────────────────────────────────────────
 export default function CardapioPage() {
@@ -60,7 +60,7 @@ export default function CardapioPage() {
   }
   function abrirEditarProd(p: Produto) {
     setEditandoProd(p)
-    setFormProd({ nome: p.nome, preco: String(p.preco), categoria_id: p.categoria_id?.toString() ?? '', descricao: p.descricao ?? '', disponivel: !!p.disponivel })
+    setFormProd({ nome: p.nome, preco: String(p.preco), categoria_id: p.categoria_id?.toString() ?? '', descricao: p.descricao ?? '', disponivel: !!p.disponivel, composicao_qtd: String(p.composicao_qtd ?? 0) })
     setErroProd(''); setModalProd(true)
   }
 
@@ -74,6 +74,7 @@ export default function CardapioPage() {
       categoria_id: formProd.categoria_id ? parseInt(formProd.categoria_id) : null,
       descricao: formProd.descricao.trim() || null,
       disponivel: formProd.disponivel ? 1 : 0,
+      composicao_qtd: parseInt(formProd.composicao_qtd) || 0,
     }
     const res = editandoProd
       ? await fetch(`/api/produtos/${editandoProd.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -100,19 +101,29 @@ export default function CardapioPage() {
   function abrirNovaCat() {
     setEditandoCat(null)
     const proximaOrdem = categorias.length > 0 ? Math.max(...categorias.map(c => c.ordem ?? 0)) + 1 : 1
-    setFormCat({ nome: '', ordem: String(proximaOrdem), is_adicional: false })
+    setFormCat({ nome: '', ordem: String(proximaOrdem), is_adicional: false, is_composicao: false, composicao_from_cat_id: '' })
     setErroCat(''); setModalCat(true)
   }
   function abrirEditarCat(c: Categoria) {
     setEditandoCat(c)
-    setFormCat({ nome: c.nome, ordem: String(c.ordem ?? 0), is_adicional: !!c.is_adicional })
+    setFormCat({
+      nome: c.nome, ordem: String(c.ordem ?? 0),
+      is_adicional: !!c.is_adicional,
+      is_composicao: !!c.is_composicao,
+      composicao_from_cat_id: c.composicao_from_cat_id ? String(c.composicao_from_cat_id) : '',
+    })
     setErroCat(''); setModalCat(true)
   }
 
   async function salvarCat() {
     if (!formCat.nome.trim()) { setErroCat('Nome obrigatório'); return }
     setSalvandoCat(true); setErroCat('')
-    const body = { nome: formCat.nome.trim(), ordem: parseInt(formCat.ordem) || 0, is_adicional: formCat.is_adicional ? 1 : 0 }
+    const body = {
+      nome: formCat.nome.trim(), ordem: parseInt(formCat.ordem) || 0,
+      is_adicional:  formCat.is_adicional  ? 1 : 0,
+      is_composicao: formCat.is_composicao ? 1 : 0,
+      composicao_from_cat_id: formCat.composicao_from_cat_id ? parseInt(formCat.composicao_from_cat_id) : null,
+    }
     const res = editandoCat
       ? await fetch(`/api/categorias/${editandoCat.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       : await fetch('/api/categorias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -256,10 +267,9 @@ export default function CardapioPage() {
                     </div>
 
                     {/* Badges */}
-                    <div className="flex gap-2">
-                      {!!cat.is_adicional && (
-                        <Badge color="amber">Adicional</Badge>
-                      )}
+                    <div className="flex gap-2 flex-wrap">
+                      {!!cat.is_adicional  && <Badge color="amber">Adicional</Badge>}
+                      {!!cat.is_composicao && <Badge color="purple">Composição</Badge>}
                       <Badge color={cat.ativo ? 'green' : 'slate'}>
                         {cat.ativo ? 'Ativa' : 'Inativa'}
                       </Badge>
@@ -312,6 +322,29 @@ export default function CardapioPage() {
               className="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500"
               placeholder="Opcional" />
           </div>
+          {/* Campo de composição — aparece se a categoria selecionada for de composição */}
+          {(() => {
+            const catSel = categorias.find(c => String(c.id) === formProd.categoria_id)
+            if (!catSel?.is_composicao) return null
+            return (
+              <div className="bg-purple-950/30 border border-purple-700 rounded-xl p-3">
+                <label className="text-purple-300 text-xs font-semibold block mb-1">
+                  Qtd de sabores a selecionar
+                </label>
+                <input
+                  type="number" min="0" max="10"
+                  value={formProd.composicao_qtd}
+                  onChange={e => setFormProd(f => ({ ...f, composicao_qtd: e.target.value }))}
+                  className="w-full bg-slate-800 border border-purple-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-400"
+                />
+                <p className="text-slate-400 text-xs mt-1">
+                  0 = sem seleção de sabores (ex: Mistão — a cozinha sabe que são todos)
+                  <br/>1 = 1 Sabor, 2 = 2 Sabores, etc.
+                </p>
+              </div>
+            )
+          })()}
+
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={formProd.disponivel} onChange={e => setFormProd(f => ({ ...f, disponivel: e.target.checked }))}
               className="w-5 h-5 accent-amber-500" />
@@ -344,15 +377,39 @@ export default function CardapioPage() {
             <p className="text-slate-500 text-xs mt-1">Número menor aparece primeiro no cardápio</p>
           </div>
           <label className="flex items-start gap-3 cursor-pointer bg-slate-800 rounded-xl p-3 border border-slate-600 hover:border-amber-500 transition-colors">
-            <input type="checkbox" checked={formCat.is_adicional} onChange={e => setFormCat(f => ({ ...f, is_adicional: e.target.checked }))}
+            <input type="checkbox" checked={formCat.is_adicional} onChange={e => setFormCat(f => ({ ...f, is_adicional: e.target.checked, is_composicao: false }))}
               className="w-5 h-5 accent-amber-500 mt-0.5 shrink-0" />
             <div>
               <p className="text-white text-sm font-semibold">Categoria de Adicionais</p>
-              <p className="text-slate-400 text-xs mt-0.5">
-                Ao selecionar um produto desta categoria, o garçom será perguntado em qual item do pedido o adicional será inserido (ex: Catupiry no Pastel de Carne).
-              </p>
+              <p className="text-slate-400 text-xs mt-0.5">Garçom escolhe em qual item do pedido o adicional será inserido (ex: Catupiry no Pastel de Carne).</p>
             </div>
           </label>
+
+          <label className="flex items-start gap-3 cursor-pointer bg-slate-800 rounded-xl p-3 border border-slate-600 hover:border-amber-500 transition-colors">
+            <input type="checkbox" checked={formCat.is_composicao} onChange={e => setFormCat(f => ({ ...f, is_composicao: e.target.checked, is_adicional: false }))}
+              className="w-5 h-5 accent-amber-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-white text-sm font-semibold">Categoria de Composição (Monte seu Pastel)</p>
+              <p className="text-slate-400 text-xs mt-0.5">Garçom seleciona N sabores de outra categoria (ex: 2 Sabores → escolhe 2 pastéis). Configure a qtd em cada produto.</p>
+            </div>
+          </label>
+
+          {formCat.is_composicao && (
+            <div>
+              <label className="text-slate-400 text-xs block mb-1">Escolher sabores de qual categoria?</label>
+              <select
+                value={formCat.composicao_from_cat_id}
+                onChange={e => setFormCat(f => ({ ...f, composicao_from_cat_id: e.target.value }))}
+                className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500"
+              >
+                <option value="">— Selecione a categoria de origem —</option>
+                {categorias
+                  .filter(c => !c.is_composicao && editandoCat?.id !== c.id)
+                  .map(c => <option key={c.id} value={c.id}>{c.nome}</option>)
+                }
+              </select>
+            </div>
+          )}
           {erroCat && <p className="text-red-400 text-sm">{erroCat}</p>}
           <div className="flex gap-3 pt-2">
             <Button variant="ghost" size="md" fullWidth onClick={() => setModalCat(false)}>Cancelar</Button>

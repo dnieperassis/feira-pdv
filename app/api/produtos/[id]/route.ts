@@ -13,7 +13,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const produto = db.prepare('SELECT id FROM produtos WHERE id = ?').get(id)
   if (!produto) return NextResponse.json({ error: 'Produto não encontrado' }, { status: 404 })
 
-  const allowed = ['nome', 'preco', 'categoria_id', 'descricao', 'disponivel', 'controla_estoque', 'estoque_minimo', 'estoque_atual']
+  const allowed = ['nome', 'preco', 'categoria_id', 'descricao', 'disponivel', 'controla_estoque', 'estoque_minimo', 'estoque_atual', 'composicao_qtd']
   const sets: string[] = []
   const values: unknown[] = []
 
